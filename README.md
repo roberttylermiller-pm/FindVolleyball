@@ -28,7 +28,7 @@ src/
       server.ts   Server-only Supabase client (service role key)
   pages/          Astro routes
   styles/         Global CSS
-  types/          Shared TypeScript types (incl. generated DB types)
+  types/          Hand-written domain types (e.g. Listing)
 docs/             Product docs (PRD, etc.)
 supabase/
   migrations/     SQL migrations for schema changes

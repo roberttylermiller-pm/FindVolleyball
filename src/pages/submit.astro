@@ -1,0 +1,201 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LocationPicker from '../components/LocationPicker.astro';
+import DayTimePicker from '../components/DayTimePicker.astro';
+---
+
+<BaseLayout title="Submit a listing | FindVolleyball">
+  <main class="submit-page">
+    <h1>Submit a listing</h1>
+    <p id="auth-notice" hidden>You need to <a href="/login">sign in</a> to submit a listing.</p>
+
+    <form id="submit-form" hidden>
+      <fieldset>
+        <legend>Type *</legend>
+        <label><input type="radio" name="type" value="indoor" required /> Indoor</label>
+        <label><input type="radio" name="type" value="grass" /> Grass</label>
+        <label><input type="radio" name="type" value="beach" /> Beach</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Cost *</legend>
+        <label><input type="radio" name="cost" value="free" required /> Free</label>
+        <label><input type="radio" name="cost" value="paid" /> Paid</label>
+      </fieldset>
+
+      <LocationPicker />
+
+      <DayTimePicker />
+
+      <fieldset>
+        <legend>Sign-ups required in advance? *</legend>
+        <label><input type="radio" name="signup_required" value="yes" required /> Yes</label>
+        <label><input type="radio" name="signup_required" value="no" /> No</label>
+      </fieldset>
+
+      <hr />
+
+      <label>
+        Name (optional)
+        <input type="text" name="name" />
+      </label>
+
+      <label>
+        External link (optional)
+        <input type="url" name="external_link" placeholder="https://..." />
+      </label>
+
+      <label>
+        Minimum skill level (optional)
+        <select name="min_skill_level">
+          <option value="">No minimum</option>
+          <option value="C">C</option>
+          <option value="B">B</option>
+          <option value="BB">BB</option>
+          <option value="A">A</option>
+          <option value="AA">AA</option>
+        </select>
+      </label>
+
+      <fieldset>
+        <legend>Equipment supplied? (optional)</legend>
+        <label><input type="radio" name="equipment_supplied" value="" checked /> Not specified</label>
+        <label><input type="radio" name="equipment_supplied" value="yes" /> Yes</label>
+        <label><input type="radio" name="equipment_supplied" value="no" /> No</label>
+      </fieldset>
+
+      <label>
+        Additional notes (optional, 250 char max)
+        <textarea name="notes" maxlength="250"></textarea>
+      </label>
+
+      <fieldset>
+        <legend>Visibility</legend>
+        <label><input type="radio" name="visibility" value="public" checked /> Public (Open Gym)</label>
+        <label><input type="radio" name="visibility" value="private" /> Private (Club)</label>
+      </fieldset>
+
+      <button type="submit">Submit listing</button>
+    </form>
+
+    <p id="submit-message" role="status"></p>
+  </main>
+</BaseLayout>
+
+<style>
+  .submit-page {
+    max-width: 32rem;
+    margin: 0 auto;
+    padding: 2rem 1rem 4rem;
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    fieldset {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      padding: 0;
+      border: none;
+
+      legend {
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+      }
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.875rem;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    select,
+    textarea {
+      padding: 0.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid #ccc;
+      border-radius: 0.25rem;
+    }
+
+    button[type="submit"] {
+      padding: 0.6rem;
+      font-size: 1rem;
+      color: white;
+      background: var(--color-accent);
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+  }
+</style>
+
+<script>
+  import { supabase } from '../lib/supabase/client';
+  import { readDaysTimes } from '../lib/listings/daysTimes';
+  import type { NewListing } from '../types/listing';
+
+  const form = document.querySelector<HTMLFormElement>('#submit-form');
+  const message = document.querySelector<HTMLParagraphElement>('#submit-message');
+  const authNotice = document.querySelector<HTMLParagraphElement>('#auth-notice');
+
+  let currentUserId: string | null = null;
+
+  // onAuthStateChange fires immediately on subscribe with the current
+  // session, so this also covers the initial render.
+  supabase.auth.onAuthStateChange((_event, session) => {
+    currentUserId = session?.user.id ?? null;
+    if (form) form.hidden = !currentUserId;
+    if (authNotice) authNotice.hidden = Boolean(currentUserId);
+  });
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!currentUserId) return;
+
+    const formData = new FormData(form);
+    const equipmentSupplied = formData.get('equipment_supplied');
+
+    const payload: NewListing = {
+      type: formData.get('type') as NewListing['type'],
+      cost: formData.get('cost') as NewListing['cost'],
+      lat: Number(formData.get('lat')),
+      lng: Number(formData.get('lng')),
+      days_times: readDaysTimes(formData),
+      signup_required: formData.get('signup_required') === 'yes',
+      name: (formData.get('name') as string) || null,
+      external_link: (formData.get('external_link') as string) || null,
+      min_skill_level: (formData.get('min_skill_level') as NewListing['min_skill_level']) || null,
+      equipment_supplied: equipmentSupplied === '' ? null : equipmentSupplied === 'yes',
+      notes: (formData.get('notes') as string) || null,
+      visibility: formData.get('visibility') as NewListing['visibility'],
+      submitted_by: currentUserId,
+    };
+
+    const { error } = await supabase.from('listings').insert(payload);
+
+    if (error) {
+      if (message) message.textContent = error.message;
+      return;
+    }
+
+    if (message) message.textContent = 'Submitted! Your listing is pending review.';
+    form.reset();
+  });
+</script>
