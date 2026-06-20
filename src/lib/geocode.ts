@@ -46,3 +46,43 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
 
   return { city, neighborhood };
 }
+
+export interface GeocodeLocationResult {
+  lat: number;
+  lng: number;
+  // [south, north, west, east] — used to fit the map view to the result's
+  // actual extent (a zip code and a city shouldn't get the same zoom).
+  boundingBox: [number, number, number, number];
+}
+
+const NOMINATIM_SEARCH_URL = 'https://nominatim.openstreetmap.org/search';
+
+// Runs client-side (location search box), unlike reverseGeocode above —
+// browsers silently strip a custom User-Agent header on fetch, so this
+// relies on the Referer header the browser sends automatically, which
+// Nominatim's usage policy also accepts for attribution.
+export async function geocodeLocation(query: string): Promise<GeocodeLocationResult | null> {
+  const url = new URL(NOMINATIM_SEARCH_URL);
+  url.searchParams.set('q', query);
+  url.searchParams.set('format', 'jsonv2');
+  url.searchParams.set('limit', '1');
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Location search failed: ${response.status} ${response.statusText}`);
+  }
+
+  const results = (await response.json()) as Array<{
+    lat: string;
+    lon: string;
+    boundingbox: [string, string, string, string];
+  }>;
+
+  const [result] = results;
+  if (!result) return null;
+
+  const [south, north, west, east] = result.boundingbox.map(Number) as [number, number, number, number];
+
+  return { lat: Number(result.lat), lng: Number(result.lon), boundingBox: [south, north, west, east] };
+}

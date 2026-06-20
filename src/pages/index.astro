@@ -2,10 +2,12 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Map from '../components/Map.astro';
 import Filters from '../components/Filters.astro';
+import LocationSearch from '../components/LocationSearch.astro';
 ---
 
 <BaseLayout>
   <main>
+    <LocationSearch />
     <Filters />
     <Map />
   </main>

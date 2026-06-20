@@ -1,0 +1,64 @@
+<form class="location-search">
+  <input type="text" name="location" placeholder="Search city, state, or zip" />
+  <button type="submit">Search</button>
+</form>
+
+<style>
+  .location-search {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1000;
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
+
+    input {
+      min-width: 12rem;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.875rem;
+      border: 1px solid #ccc;
+      border-radius: 0.25rem;
+    }
+
+    button {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.875rem;
+      color: white;
+      background: var(--color-accent);
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+  }
+</style>
+
+<script>
+  import { geocodeLocation } from '../lib/geocode';
+  import { MAP_PAN_TO_EVENT } from '../lib/map/events';
+
+  const form = document.querySelector<HTMLFormElement>('.location-search');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const input = form.querySelector<HTMLInputElement>('input[name="location"]');
+    const query = input?.value.trim();
+    if (!query) return;
+
+    try {
+      const result = await geocodeLocation(query);
+      if (!result) {
+        alert(`Couldn't find "${query}". Try a different city, state, or zip.`);
+        return;
+      }
+      window.dispatchEvent(new CustomEvent(MAP_PAN_TO_EVENT, { detail: result }));
+    } catch (err) {
+      console.error(err);
+      alert('Location search failed. Please try again.');
+    }
+  });
+</script>
