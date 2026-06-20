@@ -1,5 +1,5 @@
 {
-  "name": "play-volleyball",
+  "name": "findvolleyball",
   "type": "module",
   "version": "0.0.1",
   "engines": {
@@ -10,7 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "backfill-pseo": "tsx scripts/backfill-pseo-fields.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",

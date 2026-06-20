@@ -1,6 +1,8 @@
-# Play Volleyball
+# FindVolleyball
 
 A free, community-driven interactive map for finding local volleyball meetups — a curated alternative to listings scattered across Reclub, Meetup, Goodrec, and Facebook Groups.
+
+Built and tracked under the working name "Play Volleyball" — renamed to FindVolleyball once that name turned out to be taken. Repo/Linear project names are legacy references to that working name.
 
 Full product spec: [docs/PRD.md](docs/PRD.md). Decision history: [Linear Decisions Log](https://linear.app/robert-miller/document/play-volleyball-decisions-log-e625f8480dac).
 
@@ -83,6 +85,14 @@ SQL migrations live in `supabase/migrations/`, applied in filename order. Until 
 
 ```bash
 npm run seed
+```
+
+### Programmatic SEO
+
+Every approved listing with a `slug` gets a static `/courts/[slug]` page (e.g. `/courts/los-angeles-encino-grass-balboa-park`) with a generated `<title>`/meta description, built at `npm run build` time. `city`/`neighborhood`/`slug` are assigned via reverse geocoding (Nominatim) rather than entered manually — `npm run seed` does this automatically for new seed listings; for any listings missing those fields, run:
+
+```bash
+npm run backfill-pseo
 ```
 
 ## Project Tracking
