@@ -1,0 +1,82 @@
+---
+const DAYS: Array<{ value: string; label: string }> = [
+  { value: 'sun', label: 'Sun' },
+  { value: 'mon', label: 'Mon' },
+  { value: 'tue', label: 'Tue' },
+  { value: 'wed', label: 'Wed' },
+  { value: 'thu', label: 'Thu' },
+  { value: 'fri', label: 'Fri' },
+  { value: 'sat', label: 'Sat' },
+];
+---
+
+<fieldset class="day-time-picker">
+  <legend>Days & Times</legend>
+  {
+    DAYS.map(({ value, label }) => (
+      <div class="day-row" data-day={value}>
+        <label class="day-checkbox">
+          <input type="checkbox" name="days" value={value} />
+          {label}
+        </label>
+        <input type="time" name={`start_${value}`} disabled aria-label={`${label} start time`} />
+        <span>to</span>
+        <input type="time" name={`end_${value}`} disabled aria-label={`${label} end time`} />
+      </div>
+    ))
+  }
+</fieldset>
+
+<style>
+  .day-time-picker {
+    margin: 0;
+    padding: 0;
+    border: none;
+
+    legend {
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .day-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0;
+
+      .day-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        width: 4rem;
+        font-size: 0.875rem;
+      }
+
+      input[type="time"] {
+        padding: 0.25rem;
+        font-size: 0.875rem;
+      }
+
+      input[type="time"]:disabled {
+        background: var(--color-bg);
+      }
+    }
+  }
+</style>
+
+<script>
+  const rows = document.querySelectorAll<HTMLDivElement>('.day-time-picker .day-row');
+
+  for (const row of rows) {
+    const checkbox = row.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    const timeInputs = row.querySelectorAll<HTMLInputElement>('input[type="time"]');
+
+    checkbox?.addEventListener('change', () => {
+      for (const input of timeInputs) {
+        input.disabled = !checkbox.checked;
+        if (!checkbox.checked) input.value = '';
+      }
+    });
+  }
+</script>
