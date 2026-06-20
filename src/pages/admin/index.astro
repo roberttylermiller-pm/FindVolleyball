@@ -1,0 +1,273 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Admin | FindVolleyball">
+  <main class="admin-page">
+    <h1>Admin Dashboard</h1>
+    <p id="status-message" role="status"></p>
+
+    <section id="admin-content" hidden>
+      <section>
+        <h2>Pending review</h2>
+        <div id="pending-list"></div>
+      </section>
+
+      <section>
+        <h2>Reports</h2>
+        <div id="reports-list"></div>
+      </section>
+
+      <section>
+        <h2>All listings</h2>
+        <div id="all-listings-list"></div>
+      </section>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .admin-page {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 2rem 1rem 4rem;
+
+    section + section {
+      margin-top: 2rem;
+    }
+
+    h2 {
+      font-size: 1.1rem;
+    }
+
+    .listing-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+
+      .listing-info {
+        flex: 1;
+      }
+
+      .listing-actions {
+        display: flex;
+        gap: 0.5rem;
+
+        button {
+          padding: 0.35rem 0.75rem;
+          font-size: 0.8rem;
+          border: 1px solid #ccc;
+          border-radius: 0.25rem;
+          cursor: pointer;
+          background: white;
+        }
+
+        button.approve {
+          color: white;
+          background: #2e9e44;
+          border-color: #2e9e44;
+        }
+
+        button.reject {
+          color: white;
+          background: #c0392b;
+          border-color: #c0392b;
+        }
+      }
+    }
+
+    .empty-state {
+      font-size: 0.875rem;
+      color: #666;
+    }
+  }
+</style>
+
+<script>
+  import { supabase } from '../../lib/supabase/client';
+
+  const statusMessage = document.querySelector<HTMLParagraphElement>('#status-message');
+  const content = document.querySelector<HTMLElement>('#admin-content');
+  const pendingList = document.querySelector<HTMLDivElement>('#pending-list');
+  const reportsList = document.querySelector<HTMLDivElement>('#reports-list');
+  const allListingsList = document.querySelector<HTMLDivElement>('#all-listings-list');
+
+  interface Listing {
+    id: string;
+    name: string | null;
+    type: string;
+    cost: string;
+    status: string;
+    decayed: boolean;
+  }
+
+  interface Report {
+    id: string;
+    note: string;
+    created_at: string;
+    listings: { name: string | null; type: string; status: string } | null;
+  }
+
+  async function getAccessToken(): Promise<string | null> {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  }
+
+  async function apiFetch(path: string, options: RequestInit = {}) {
+    const token = await getAccessToken();
+    const response = await fetch(path, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${token}`,
+        ...(options.body ? { 'content-type': 'application/json' } : {}),
+      },
+    });
+    return response;
+  }
+
+  function renderPending(listings: Listing[]) {
+    if (!pendingList) return;
+    if (listings.length === 0) {
+      pendingList.innerHTML = '<p class="empty-state">Nothing pending review.</p>';
+      return;
+    }
+
+    pendingList.innerHTML = listings
+      .map(
+        (listing) => `
+        <div class="listing-row" data-id="${listing.id}">
+          <div class="listing-info">${listing.name ?? `${listing.type} listing`} — ${listing.type}, ${listing.cost}</div>
+          <div class="listing-actions">
+            <button class="approve" data-action="approve" data-id="${listing.id}">Approve</button>
+            <button class="reject" data-action="reject" data-id="${listing.id}">Reject</button>
+          </div>
+        </div>`,
+      )
+      .join('');
+  }
+
+  function renderReports(reports: Report[]) {
+    if (!reportsList) return;
+    if (reports.length === 0) {
+      reportsList.innerHTML = '<p class="empty-state">No reports.</p>';
+      return;
+    }
+
+    reportsList.innerHTML = reports
+      .map(
+        (report) => `
+        <div class="listing-row">
+          <div class="listing-info">
+            <strong>${report.listings?.name ?? 'Unknown listing'}</strong> (${report.listings?.status ?? 'unknown'})<br>
+            ${report.note}
+          </div>
+        </div>`,
+      )
+      .join('');
+  }
+
+  function renderAllListings(listings: Listing[]) {
+    if (!allListingsList) return;
+    if (listings.length === 0) {
+      allListingsList.innerHTML = '<p class="empty-state">No listings yet.</p>';
+      return;
+    }
+
+    allListingsList.innerHTML = listings
+      .map(
+        (listing) => `
+        <div class="listing-row" data-id="${listing.id}">
+          <div class="listing-info">
+            ${listing.name ?? `${listing.type} listing`} — ${listing.status}${listing.decayed ? ' · decayed' : ''}
+          </div>
+          <div class="listing-actions">
+            <button data-action="toggle-decayed" data-id="${listing.id}" data-decayed="${listing.decayed}">
+              ${listing.decayed ? 'Clear decayed' : 'Mark decayed'}
+            </button>
+            ${
+              listing.status === 'rejected'
+                ? `<button data-action="reactivate" data-id="${listing.id}">Reactivate</button>`
+                : `<button class="reject" data-action="deactivate" data-id="${listing.id}">Mark inactive</button>`
+            }
+          </div>
+        </div>`,
+      )
+      .join('');
+  }
+
+  async function loadDashboard() {
+    const [pendingRes, reportsRes, allRes] = await Promise.all([
+      apiFetch('/api/admin/listings?status=pending'),
+      apiFetch('/api/admin/reports'),
+      apiFetch('/api/admin/listings'),
+    ]);
+
+    if (pendingRes.status === 401 || pendingRes.status === 403) {
+      if (statusMessage) statusMessage.textContent = 'Not authorized.';
+      return;
+    }
+
+    const { listings: pending } = await pendingRes.json();
+    const { reports } = await reportsRes.json();
+    const { listings: all } = await allRes.json();
+
+    if (content) content.hidden = false;
+    if (statusMessage) statusMessage.textContent = '';
+
+    renderPending(pending ?? []);
+    renderReports(reports ?? []);
+    renderAllListings(all ?? []);
+  }
+
+  pendingList?.addEventListener('click', async (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]');
+    if (!button) return;
+
+    const { action, id } = button.dataset;
+    await apiFetch(`/api/admin/listings/${id}/${action}`, { method: 'POST' });
+    loadDashboard();
+  });
+
+  allListingsList?.addEventListener('click', async (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]');
+    if (!button) return;
+
+    const { action, id, decayed } = button.dataset;
+
+    if (action === 'toggle-decayed') {
+      await apiFetch(`/api/admin/listings/${id}/override`, {
+        method: 'POST',
+        body: JSON.stringify({ decayed: decayed !== 'true' }),
+      });
+    } else if (action === 'deactivate') {
+      await apiFetch(`/api/admin/listings/${id}/override`, {
+        method: 'POST',
+        body: JSON.stringify({ status: 'rejected' }),
+      });
+    } else if (action === 'reactivate') {
+      await apiFetch(`/api/admin/listings/${id}/override`, {
+        method: 'POST',
+        body: JSON.stringify({ status: 'approved' }),
+      });
+    }
+
+    loadDashboard();
+  });
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (!session) {
+      if (statusMessage) statusMessage.textContent = 'You need to sign in as an admin to view this page.';
+      if (content) content.hidden = true;
+      return;
+    }
+    loadDashboard();
+  });
+</script>
