@@ -32,17 +32,17 @@ const { listing } = Astro.props;
 const { title, description } = buildCourtMetadata({
   type: listing.type,
   city: listing.city ?? '',
-  neighborhood: listing.neighborhood ?? '',
+  neighborhood: listing.neighborhood,
 });
 ---
 
 <BaseLayout title={title} description={description}>
   <main class="court-page" data-listing-id={listing.id}>
     <h1>
-      {listing.name ?? `${listing.type} volleyball in ${listing.neighborhood}`}
+      {listing.name ?? `${listing.type} volleyball in ${listing.neighborhood ?? listing.city}`}
       {listing.decayed && <span class="decayed-badge">Decayed — may no longer be active</span>}
     </h1>
-    <p>{listing.neighborhood}, {listing.city}</p>
+    <p>{listing.neighborhood ? `${listing.neighborhood}, ${listing.city}` : listing.city}</p>
     <dl>
       <dt>Surface</dt>
       <dd>{listing.type}</dd>

@@ -1,6 +1,9 @@
 export interface ReverseGeocodeResult {
   city: string;
-  neighborhood: string;
+  // Null when the location has no neighbourhood-level subdivision in OSM
+  // data (common for small standalone cities, e.g. West Hollywood — it
+  // IS the city, with nothing finer-grained to report).
+  neighborhood: string | null;
 }
 
 interface NominatimAddress {
@@ -37,11 +40,18 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
   const data = (await response.json()) as { address?: NominatimAddress };
   const address = data.address ?? {};
 
-  const neighborhood = address.neighbourhood ?? address.suburb ?? address.quarter;
+  // LA-area OSM data tags many areas with their formal governance name
+  // (e.g. "North Hollywood Neighborhood Council District") rather than
+  // the casual neighborhood name — fine for a map tooltip, bad for an
+  // SEO title. Stripped here since it's specifically a display concern.
+  const rawNeighborhood = address.neighbourhood ?? address.suburb ?? address.quarter ?? null;
+  const neighborhood = rawNeighborhood
+    ? rawNeighborhood.replace(/\s*Neighborhood Council District$/i, '').trim() || null
+    : null;
   const city = address.city ?? address.town ?? address.village;
 
-  if (!neighborhood || !city) {
-    throw new Error(`Reverse geocode returned no usable city/neighborhood for ${lat},${lng}`);
+  if (!city) {
+    throw new Error(`Reverse geocode returned no usable city for ${lat},${lng}`);
   }
 
   return { city, neighborhood };

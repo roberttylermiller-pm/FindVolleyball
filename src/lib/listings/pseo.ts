@@ -12,7 +12,7 @@ export interface PseoAssignmentInput {
 
 export interface PseoAssignment {
   city: string;
-  neighborhood: string;
+  neighborhood: string | null;
   slug: string;
   last_verified_date: string;
 }
