@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { supabase } from '../../lib/supabase/client';
+import { buildCourtMetadata } from '../../lib/seo/courtMetadata';
+import type { Listing } from '../../types/listing';
+
+export async function getStaticPaths() {
+  // RLS already restricts anon reads to approved listings; slug is only
+  // ever set once a listing has been geocoded (see ROB-40), so filtering
+  // on it here doubles as "has pSEO data ready."
+  const { data: listings, error } = await supabase
+    .from('listings')
+    .select('*')
+    .eq('status', 'approved')
+    .not('slug', 'is', null);
+
+  if (error) {
+    throw new Error(`Failed to load listings for /courts routes: ${error.message}`);
+  }
+
+  return ((listings ?? []) as Listing[]).map((listing) => ({
+    params: { slug: listing.slug },
+    props: { listing },
+  }));
+}
+
+interface Props {
+  listing: Listing;
+}
+
+const { listing } = Astro.props;
+const { title, description } = buildCourtMetadata({
+  type: listing.type,
+  city: listing.city ?? '',
+  neighborhood: listing.neighborhood ?? '',
+});
+---
+
+<BaseLayout title={title} description={description}>
+  <main>
+    <h1>{listing.name ?? `${listing.type} volleyball in ${listing.neighborhood}`}</h1>
+    <p>{listing.neighborhood}, {listing.city}</p>
+    <dl>
+      <dt>Surface</dt>
+      <dd>{listing.type}</dd>
+      <dt>Cost</dt>
+      <dd>{listing.cost}</dd>
+      <dt>Sign-up required</dt>
+      <dd>{listing.signup_required ? 'Yes' : 'No'}</dd>
+      {listing.min_skill_level && (
+        <>
+          <dt>Minimum skill level</dt>
+          <dd>{listing.min_skill_level}</dd>
+        </>
+      )}
+      {listing.notes && (
+        <>
+          <dt>Notes</dt>
+          <dd>{listing.notes}</dd>
+        </>
+      )}
+    </dl>
+    {listing.external_link && (
+      <p><a href={listing.external_link}>Join / view this meetup</a></p>
+    )}
+  </main>
+</BaseLayout>
