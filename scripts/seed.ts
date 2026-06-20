@@ -1,20 +1,14 @@
 import 'dotenv/config';
-import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'node:crypto';
+import { assignPseoFields } from '../src/lib/listings/pseo';
+import { createAdminClient } from './lib/admin-client';
 import { seedListings } from './seed-data/sfv-listings';
 
-// Runs as a plain Node script (via tsx), not through Astro/Vite — so it
-// can't use import.meta.env like src/lib/supabase/server.ts does. Loads
-// .env directly and builds its own admin client instead.
-const supabaseUrl = process.env.PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAdmin = createAdminClient();
 
-if (!supabaseUrl || !serviceRoleKey) {
-  throw new Error('Missing PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env');
-}
-
-const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-  auth: { persistSession: false },
-});
+// Nominatim's usage policy caps anonymous use at ~1 request/second.
+const GEOCODE_DELAY_MS = 1100;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
   if (seedListings.length === 0) {
@@ -24,10 +18,23 @@ async function main() {
 
   // Seed data is Robert's own first-hand organizer knowledge, not a public
   // submission — inserted as already approved, bypassing the review queue.
-  const { data, error } = await supabaseAdmin
-    .from('listings')
-    .insert(seedListings.map((listing) => ({ ...listing, status: 'approved' as const })))
-    .select('id');
+  // pSEO fields (city/neighborhood/slug) are assigned up front so each
+  // listing has a working /courts/[slug] page as soon as it's seeded.
+  const rows = [];
+  for (const listing of seedListings) {
+    const id = randomUUID();
+    const pseo = await assignPseoFields({
+      id,
+      lat: listing.lat,
+      lng: listing.lng,
+      type: listing.type,
+      name: listing.name,
+    });
+    rows.push({ ...listing, id, status: 'approved' as const, ...pseo });
+    await sleep(GEOCODE_DELAY_MS);
+  }
+
+  const { data, error } = await supabaseAdmin.from('listings').insert(rows).select('id');
 
   if (error) {
     console.error('Seed failed:', error.message);
