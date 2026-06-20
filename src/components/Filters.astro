@@ -1,0 +1,70 @@
+<div class="filters">
+  <fieldset>
+    <legend>Type</legend>
+    <label><input type="checkbox" name="type" value="indoor" checked /> Indoor</label>
+    <label><input type="checkbox" name="type" value="grass" checked /> Grass</label>
+    <label><input type="checkbox" name="type" value="beach" checked /> Beach</label>
+  </fieldset>
+  <fieldset>
+    <legend>Cost</legend>
+    <label><input type="checkbox" name="cost" value="free" checked /> Free</label>
+    <label><input type="checkbox" name="cost" value="paid" checked /> Paid</label>
+  </fieldset>
+</div>
+
+<style>
+  .filters {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.75rem 1rem;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
+
+    fieldset {
+      margin: 0;
+      padding: 0;
+      border: none;
+
+      legend {
+        margin-bottom: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      label {
+        display: block;
+        font-size: 0.875rem;
+      }
+    }
+  }
+</style>
+
+<script>
+  import { LISTING_FILTERS_EVENT } from '../lib/listings/filters';
+  import type { ListingFilters } from '../lib/listings/filters';
+
+  const container = document.querySelector<HTMLDivElement>('.filters');
+
+  function readFilters(scope: HTMLDivElement): ListingFilters {
+    const types = Array.from(scope.querySelectorAll<HTMLInputElement>('input[name="type"]:checked')).map(
+      (el) => el.value,
+    );
+    const costs = Array.from(scope.querySelectorAll<HTMLInputElement>('input[name="cost"]:checked')).map(
+      (el) => el.value,
+    );
+    return {
+      types: new Set(types) as ListingFilters['types'],
+      costs: new Set(costs) as ListingFilters['costs'],
+    };
+  }
+
+  container?.addEventListener('change', () => {
+    window.dispatchEvent(new CustomEvent<ListingFilters>(LISTING_FILTERS_EVENT, { detail: readFilters(container) }));
+  });
+</script>

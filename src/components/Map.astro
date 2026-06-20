@@ -21,6 +21,9 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   import markerShadow from 'leaflet/dist/images/marker-shadow.png';
   import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '../lib/map/constants';
   import { fetchApprovedListings } from '../lib/listings/fetchApproved';
+  import { LISTING_FILTERS_EVENT, defaultListingFilters, listingMatchesFilters } from '../lib/listings/filters';
+  import type { ListingFilters } from '../lib/listings/filters';
+  import type { Listing } from '../types/listing';
 
   // Leaflet's default marker icon paths assume a non-bundled asset layout;
   // under Vite they 404 unless re-pointed at the bundled URLs.
@@ -41,16 +44,27 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   const clusterGroup = L.markerClusterGroup();
   map.addLayer(clusterGroup);
 
-  try {
-    const listings = await fetchApprovedListings();
+  let allListings: Listing[] = [];
 
-    for (const listing of listings) {
+  function renderMarkers(filters: ListingFilters) {
+    clusterGroup.clearLayers();
+    for (const listing of allListings) {
+      if (!listingMatchesFilters(listing, filters)) continue;
       const marker = L.marker([listing.lat, listing.lng]);
       marker.bindPopup(
         `<strong>${listing.name ?? `${listing.type} volleyball`}</strong><br>${listing.type} &middot; ${listing.cost}`,
       );
       clusterGroup.addLayer(marker);
     }
+  }
+
+  window.addEventListener(LISTING_FILTERS_EVENT, (event) => {
+    renderMarkers((event as CustomEvent<ListingFilters>).detail);
+  });
+
+  try {
+    allListings = await fetchApprovedListings();
+    renderMarkers(defaultListingFilters());
   } catch (err) {
     console.error(err);
   }
