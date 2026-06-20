@@ -1,9 +1,9 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 
-import node from '@astrojs/node';
-
 import sitemap from '@astrojs/sitemap';
+
+import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
@@ -11,9 +11,7 @@ export default defineConfig({
   // required for the sitemap/canonical URLs to be absolute.
   site: 'https://findvolleyball.app',
 
-  adapter: node({
-    mode: 'standalone'
-  }),
+  adapter: vercel(),
 
   integrations: [
     sitemap({

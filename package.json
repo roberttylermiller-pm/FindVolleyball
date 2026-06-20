@@ -14,8 +14,8 @@
     "backfill-pseo": "tsx scripts/backfill-pseo-fields.ts"
   },
   "dependencies": {
-    "@astrojs/node": "^10.1.4",
     "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/vercel": "^10.0.8",
     "@supabase/supabase-js": "^2.108.2",
     "astro": "^6.4.7",
     "leaflet": "^1.9.4",

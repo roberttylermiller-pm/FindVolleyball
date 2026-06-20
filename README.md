@@ -70,14 +70,14 @@ npm run dev
 
 ### Build for production
 
-Most of the site is statically generated, but `/api/admin/*` routes need a server at runtime (they use the service-role key, which can never ship to the browser) — the project uses `@astrojs/node` in standalone mode:
+Most of the site is statically generated, but `/api/admin/*` routes need a server at runtime (they use the service-role key, which can never ship to the browser) — the project deploys to [Vercel](https://vercel.com) via `@astrojs/vercel`.
 
 ```bash
 npm run build
-node ./dist/server/entry.mjs
+npm run preview
 ```
 
-`npm run preview` also works for local testing.
+**Deploying:** the build runs `getStaticPaths` against Supabase to generate `/courts/[slug]` pages, so the three env vars above must be set in the Vercel project (Settings → Environment Variables), not just your local `.env` — otherwise the build fails with `supabaseUrl is required`.
 
 ### Database schema
 
