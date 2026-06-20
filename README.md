@@ -70,10 +70,14 @@ npm run dev
 
 ### Build for production
 
+Most of the site is statically generated, but `/api/admin/*` routes need a server at runtime (they use the service-role key, which can never ship to the browser) — the project uses `@astrojs/node` in standalone mode:
+
 ```bash
 npm run build
-npm run preview
+node ./dist/server/entry.mjs
 ```
+
+`npm run preview` also works for local testing.
 
 ### Database schema
 
