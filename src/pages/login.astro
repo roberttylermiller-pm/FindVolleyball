@@ -1,10 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import GoogleSignInButton from '../components/GoogleSignInButton.astro';
 ---
 
 <BaseLayout title="Sign in | FindVolleyball">
   <main class="auth">
     <h1>Sign in</h1>
+    <GoogleSignInButton />
     <form id="login-form">
       <label>
         Email
@@ -47,7 +49,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       border-radius: 0.25rem;
     }
 
-    button {
+    button[type="submit"] {
       padding: 0.6rem;
       font-size: 1rem;
       color: white;
