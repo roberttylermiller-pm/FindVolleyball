@@ -3,14 +3,22 @@
   --color-text: #1a1a1a;
   --color-accent: #ff7a00;
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --header-height: 3.5rem;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
   font-family: var(--font-sans);
   background: var(--color-bg);
   color: var(--color-text);
