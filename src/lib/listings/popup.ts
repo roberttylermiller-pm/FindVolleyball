@@ -13,7 +13,7 @@ function formatDayTime(dt: DayTime): string {
 export function buildListingPopupHtml(listing: Listing): string {
   const title = listing.name ?? `${listing.type} volleyball`;
   const lines: string[] = [
-    `<strong>${title}</strong>`,
+    `<strong>${title}</strong>${listing.decayed ? ' <em>(decayed — may no longer be active)</em>' : ''}`,
     `${listing.type} · ${listing.cost} · ${listing.visibility === 'public' ? 'Open Gym' : 'Private/Club'}`,
   ];
 

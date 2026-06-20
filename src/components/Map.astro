@@ -44,7 +44,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
     clusterGroup.clearLayers();
     for (const listing of allListings) {
       if (!listingMatchesFilters(listing, filters)) continue;
-      const marker = L.marker([listing.lat, listing.lng]);
+      const marker = L.marker([listing.lat, listing.lng], { opacity: listing.decayed ? 0.5 : 1 });
       marker.bindPopup(buildListingPopupHtml(listing));
       clusterGroup.addLayer(marker);
     }

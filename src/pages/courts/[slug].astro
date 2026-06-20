@@ -37,8 +37,11 @@ const { title, description } = buildCourtMetadata({
 ---
 
 <BaseLayout title={title} description={description}>
-  <main>
-    <h1>{listing.name ?? `${listing.type} volleyball in ${listing.neighborhood}`}</h1>
+  <main class="court-page" data-listing-id={listing.id}>
+    <h1>
+      {listing.name ?? `${listing.type} volleyball in ${listing.neighborhood}`}
+      {listing.decayed && <span class="decayed-badge">Decayed — may no longer be active</span>}
+    </h1>
     <p>{listing.neighborhood}, {listing.city}</p>
     <dl>
       <dt>Surface</dt>
@@ -63,5 +66,165 @@ const { title, description } = buildCourtMetadata({
     {listing.external_link && (
       <p><a href={listing.external_link}>Join / view this meetup</a></p>
     )}
+
+    <section class="vote-section">
+      <p>Still happening?</p>
+      <div class="vote-buttons">
+        <button type="button" id="vote-up" aria-label="Still active">👍</button>
+        <button type="button" id="vote-down" aria-label="No longer active">👎</button>
+      </div>
+      <p id="vote-message" role="status"></p>
+    </section>
+
+    <section class="report-section">
+      <button type="button" id="report-toggle">Report an issue with this listing</button>
+      <form id="report-form" hidden>
+        <label>
+          What's wrong? (250 char max)
+          <textarea name="note" maxlength="250" required></textarea>
+        </label>
+        <button type="submit">Submit report</button>
+      </form>
+      <p id="report-message" role="status"></p>
+    </section>
   </main>
 </BaseLayout>
+
+<style>
+  .court-page {
+    max-width: 32rem;
+    margin: 0 auto;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .decayed-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #856404;
+    background: #fff3cd;
+    border-radius: 0.25rem;
+    vertical-align: middle;
+  }
+
+  .vote-section,
+  .report-section {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e5e5;
+  }
+
+  .vote-buttons {
+    display: flex;
+    gap: 0.75rem;
+
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1.25rem;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 0.375rem;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  #report-toggle {
+    padding: 0;
+    font-size: 0.875rem;
+    color: #666;
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  #report-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 24rem;
+    margin-top: 0.75rem;
+
+    textarea {
+      padding: 0.5rem;
+      font-family: inherit;
+      font-size: 0.875rem;
+      border: 1px solid #ccc;
+      border-radius: 0.25rem;
+    }
+
+    button[type="submit"] {
+      align-self: flex-start;
+      padding: 0.4rem 1rem;
+      font-size: 0.875rem;
+      color: white;
+      background: var(--color-accent);
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+  }
+</style>
+
+<script>
+  import { supabase } from '../../lib/supabase/client';
+
+  const main = document.querySelector<HTMLElement>('.court-page');
+  const listingId = main?.dataset.listingId;
+
+  const voteUp = document.querySelector<HTMLButtonElement>('#vote-up');
+  const voteDown = document.querySelector<HTMLButtonElement>('#vote-down');
+  const voteMessage = document.querySelector<HTMLParagraphElement>('#vote-message');
+
+  async function castVote(voteType: 'up' | 'down') {
+    if (!listingId) return;
+    voteUp?.setAttribute('disabled', 'true');
+    voteDown?.setAttribute('disabled', 'true');
+
+    const { error } = await supabase.from('votes').insert({ listing_id: listingId, vote_type: voteType });
+
+    if (voteMessage) {
+      voteMessage.textContent = error ? 'Something went wrong — please try again.' : 'Thanks for the update!';
+    }
+  }
+
+  voteUp?.addEventListener('click', () => castVote('up'));
+  voteDown?.addEventListener('click', () => castVote('down'));
+
+  const reportToggle = document.querySelector<HTMLButtonElement>('#report-toggle');
+  const reportForm = document.querySelector<HTMLFormElement>('#report-form');
+  const reportMessage = document.querySelector<HTMLParagraphElement>('#report-message');
+
+  reportToggle?.addEventListener('click', () => {
+    if (reportForm) reportForm.hidden = !reportForm.hidden;
+  });
+
+  reportForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!listingId) return;
+
+    const formData = new FormData(reportForm);
+    const note = String(formData.get('note') ?? '').trim();
+    if (!note) return;
+
+    const { error } = await supabase.from('reports').insert({ listing_id: listingId, note });
+
+    if (reportMessage) {
+      reportMessage.textContent = error
+        ? 'Something went wrong — please try again.'
+        : "Thanks — we'll take a look.";
+    }
+
+    if (!error) {
+      reportForm.reset();
+      reportForm.hidden = true;
+    }
+  });
+</script>
