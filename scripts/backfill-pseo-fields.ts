@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { assignPseoFields } from '../src/lib/listings/pseo';
+import { assignPseoFields, findUniqueSlug } from '../src/lib/listings/pseo';
 import { createAdminClient } from './lib/admin-client';
 
 const supabaseAdmin = createAdminClient();
@@ -7,26 +7,6 @@ const supabaseAdmin = createAdminClient();
 // Nominatim's usage policy caps anonymous use at ~1 request/second.
 const GEOCODE_DELAY_MS = 1100;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function uniqueSlug(candidate: string): Promise<string> {
-  let slug = candidate;
-  let suffix = 2;
-
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const { data, error } = await supabaseAdmin
-      .from('listings')
-      .select('id')
-      .eq('slug', slug)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!data) return slug;
-
-    slug = `${candidate}-${suffix}`;
-    suffix += 1;
-  }
-}
 
 async function main() {
   const { data: listings, error } = await supabaseAdmin
@@ -49,7 +29,7 @@ async function main() {
     try {
       const { city, neighborhood, slug: candidateSlug, last_verified_date } =
         await assignPseoFields(listing);
-      const slug = await uniqueSlug(candidateSlug);
+      const slug = await findUniqueSlug(supabaseAdmin, candidateSlug);
 
       const { error: updateError } = await supabaseAdmin
         .from('listings')
