@@ -73,6 +73,18 @@ npm run build
 npm run preview
 ```
 
+### Database schema
+
+SQL migrations live in `supabase/migrations/`, applied in filename order. Until the Supabase CLI is linked to the project, run them via the Supabase dashboard's SQL Editor.
+
+### Seeding data
+
+`scripts/seed.ts` inserts the listings defined in `scripts/seed-data/sfv-listings.ts` directly into the `listings` table (as already-approved, bypassing the review queue — intended for trusted, first-hand data, not user submissions):
+
+```bash
+npm run seed
+```
+
 ## Project Tracking
 
 Work is tracked in Linear (project: *Play Volleyball*) across milestones M0–M7, from initial setup through map browsing, auth, submissions, admin moderation, voting/decay, and launch polish.
