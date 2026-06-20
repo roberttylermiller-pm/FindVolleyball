@@ -31,11 +31,27 @@ export interface Listing {
   submitted_by: string | null;
   created_at: string;
   updated_at: string;
+
+  // pSEO fields — populated by reverse geocoding (see src/lib/geocode.ts),
+  // not submitted directly by the user.
+  city: string | null;
+  neighborhood: string | null;
+  last_verified_date: string | null;
+  slug: string | null;
 }
 
 export type NewListing = Omit<
   Listing,
-  'id' | 'created_at' | 'updated_at' | 'decayed' | 'last_upvote_at' | 'status'
+  | 'id'
+  | 'created_at'
+  | 'updated_at'
+  | 'decayed'
+  | 'last_upvote_at'
+  | 'status'
+  | 'city'
+  | 'neighborhood'
+  | 'last_verified_date'
+  | 'slug'
 > & {
   status?: ListingStatus;
 };
