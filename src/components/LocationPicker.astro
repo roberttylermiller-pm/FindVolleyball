@@ -1,0 +1,142 @@
+---
+import 'leaflet/dist/leaflet.css';
+---
+
+<div class="location-picker">
+  <label>
+    Address
+    <div class="address-row">
+      <input type="text" id="address-input" placeholder="Street address, city, state" />
+      <button type="button" id="find-address-btn">Find</button>
+    </div>
+  </label>
+  <div id="picker-map"></div>
+  <p class="hint">Click the map or drag the pin to set the exact location.</p>
+  <input type="hidden" name="lat" id="lat-input" required />
+  <input type="hidden" name="lng" id="lng-input" required />
+</div>
+
+<style>
+  .location-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.875rem;
+    }
+
+    .address-row {
+      display: flex;
+      gap: 0.5rem;
+
+      input {
+        flex: 1;
+        padding: 0.5rem;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 0.25rem;
+      }
+
+      button {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        color: white;
+        background: var(--color-accent);
+        border: none;
+        border-radius: 0.25rem;
+        cursor: pointer;
+      }
+    }
+
+    #picker-map {
+      width: 100%;
+      height: 16rem;
+      border-radius: 0.5rem;
+    }
+
+    .hint {
+      margin: 0;
+      font-size: 0.8rem;
+      color: #666;
+    }
+  }
+</style>
+
+<script>
+  import L from 'leaflet';
+  import { fixDefaultMarkerIcon } from '../lib/map/fixDefaultIcon';
+  import { geocodeLocation } from '../lib/geocode';
+  import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '../lib/map/constants';
+
+  fixDefaultMarkerIcon();
+
+  const map = L.map('picker-map').setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  }).addTo(map);
+
+  const latInput = document.querySelector<HTMLInputElement>('#lat-input');
+  const lngInput = document.querySelector<HTMLInputElement>('#lng-input');
+
+  let marker: L.Marker | null = null;
+
+  function updateInputs(lat: number, lng: number) {
+    if (latInput) latInput.value = String(lat);
+    if (lngInput) lngInput.value = String(lng);
+  }
+
+  function setMarker(lat: number, lng: number) {
+    if (marker) {
+      marker.setLatLng([lat, lng]);
+    } else {
+      marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+      marker.on('dragend', () => {
+        const pos = marker!.getLatLng();
+        updateInputs(pos.lat, pos.lng);
+      });
+    }
+    updateInputs(lat, lng);
+  }
+
+  map.on('click', (event: L.LeafletMouseEvent) => {
+    setMarker(event.latlng.lat, event.latlng.lng);
+  });
+
+  const addressInput = document.querySelector<HTMLInputElement>('#address-input');
+  const findButton = document.querySelector<HTMLButtonElement>('#find-address-btn');
+
+  async function findAddress() {
+    const query = addressInput?.value.trim();
+    if (!query) return;
+
+    try {
+      const result = await geocodeLocation(query);
+      if (!result) {
+        alert(`Couldn't find "${query}". Try a more specific address, or drop a pin manually.`);
+        return;
+      }
+      map.setView([result.lat, result.lng], 16);
+      setMarker(result.lat, result.lng);
+    } catch (err) {
+      console.error(err);
+      alert('Address lookup failed. Please try again or drop a pin manually.');
+    }
+  }
+
+  findButton?.addEventListener('click', findAddress);
+
+  // Prevent Enter in the address field from submitting the parent
+  // submission form — redirect it to the Find action instead.
+  addressInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      findAddress();
+    }
+  });
+</script>
