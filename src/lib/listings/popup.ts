@@ -28,6 +28,8 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
     <div class="popup-row">Sign-up required: ${listing.signup_required ? 'Yes' : 'No'}</div>
     ${listing.min_skill_level ? `<div class="popup-row">Min skill: ${listing.min_skill_level}</div>` : ''}
     ${listing.equipment_supplied !== null ? `<div class="popup-row">Equipment supplied: ${listing.equipment_supplied ? 'Yes' : 'No'}</div>` : ''}
+    ${listing.payment_types ? `<div class="popup-row">Payment: ${listing.payment_types}</div>` : ''}
+    ${listing.team_required !== null ? `<div class="popup-row">Team required: ${listing.team_required ? 'Yes' : 'No'}</div>` : ''}
     ${listing.notes ? `<div class="popup-notes">${listing.notes}</div>` : ''}
     ${
       listing.external_link

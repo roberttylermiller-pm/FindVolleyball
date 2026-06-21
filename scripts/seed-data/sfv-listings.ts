@@ -23,6 +23,8 @@ export const seedListings: NewListing[] = [
       'Games run until sundown. Also see meetup.com/burbank-rec-club.',
     visibility: 'public',
     photo_url: null,
+    payment_types: null,
+    team_required: null,
     submitted_by: null,
   },
   {
@@ -39,6 +41,8 @@ export const seedListings: NewListing[] = [
     notes: 'Schedule is sporadic — check Meetup for upcoming session times.',
     visibility: 'public',
     photo_url: null,
+    payment_types: null,
+    team_required: null,
     submitted_by: null,
   },
   {
@@ -55,6 +59,8 @@ export const seedListings: NewListing[] = [
     notes: 'Women only',
     visibility: 'public',
     photo_url: null,
+    payment_types: null,
+    team_required: null,
     submitted_by: null,
   },
   {
@@ -71,6 +77,8 @@ export const seedListings: NewListing[] = [
     notes: null,
     visibility: 'public',
     photo_url: null,
+    payment_types: null,
+    team_required: null,
     submitted_by: null,
   },
   {
@@ -87,6 +95,8 @@ export const seedListings: NewListing[] = [
     notes: null,
     visibility: 'public',
     photo_url: null,
+    payment_types: null,
+    team_required: null,
     submitted_by: null,
   },
   {
@@ -106,6 +116,8 @@ export const seedListings: NewListing[] = [
     notes: null,
     visibility: 'public',
     photo_url: null,
+    payment_types: null,
+    team_required: null,
     submitted_by: null,
   },
   {
@@ -122,6 +134,8 @@ export const seedListings: NewListing[] = [
     notes: null,
     visibility: 'public',
     photo_url: null,
+    payment_types: null,
+    team_required: null,
     submitted_by: null,
   },
   {
@@ -142,6 +156,8 @@ export const seedListings: NewListing[] = [
     notes: null,
     visibility: 'private',
     photo_url: null,
+    payment_types: null,
+    team_required: null,
     submitted_by: null,
   },
 ];

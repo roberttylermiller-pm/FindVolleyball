@@ -65,6 +65,18 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       </fieldset>
 
       <label>
+        Payment types (optional, e.g. "Cash only" or "Venmo")
+        <input type="text" name="payment_types" maxlength="100" />
+      </label>
+
+      <fieldset>
+        <legend>Team required on signup? (optional)</legend>
+        <label><input type="radio" name="team_required" value="" checked /> Not specified</label>
+        <label><input type="radio" name="team_required" value="yes" /> Yes</label>
+        <label><input type="radio" name="team_required" value="no" /> No</label>
+      </fieldset>
+
+      <label>
         Additional notes (optional, 250 char max)
         <textarea name="notes" maxlength="250"></textarea>
       </label>
@@ -184,6 +196,7 @@ import DayTimePicker from '../components/DayTimePicker.astro';
 
     const formData = new FormData(form);
     const equipmentSupplied = formData.get('equipment_supplied');
+    const teamRequired = formData.get('team_required');
 
     let photoUrl: string | null = null;
     const photoFile = formData.get('photo');
@@ -207,6 +220,8 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       external_link: (formData.get('external_link') as string) || null,
       min_skill_level: (formData.get('min_skill_level') as NewListing['min_skill_level']) || null,
       equipment_supplied: equipmentSupplied === '' ? null : equipmentSupplied === 'yes',
+      payment_types: (formData.get('payment_types') as string) || null,
+      team_required: teamRequired === '' ? null : teamRequired === 'yes',
       notes: (formData.get('notes') as string) || null,
       visibility: formData.get('visibility') as NewListing['visibility'],
       photo_url: photoUrl,

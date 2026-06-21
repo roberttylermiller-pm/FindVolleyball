@@ -26,6 +26,8 @@ export interface Listing {
   notes: string | null;
   visibility: Visibility;
   photo_url: string | null;
+  payment_types: string | null;
+  team_required: boolean | null;
   status: ListingStatus;
   decayed: boolean;
   last_upvote_at: string | null;

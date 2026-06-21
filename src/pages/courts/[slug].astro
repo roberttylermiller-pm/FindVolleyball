@@ -69,6 +69,18 @@ const { title, description } = buildCourtMetadata({
           <dd>{listing.min_skill_level}</dd>
         </>
       )}
+      {listing.payment_types && (
+        <>
+          <dt>Payment types</dt>
+          <dd>{listing.payment_types}</dd>
+        </>
+      )}
+      {listing.team_required !== null && (
+        <>
+          <dt>Team required</dt>
+          <dd>{listing.team_required ? 'Yes' : 'No'}</dd>
+        </>
+      )}
       {listing.notes && (
         <>
           <dt>Notes</dt>
