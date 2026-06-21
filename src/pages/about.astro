@@ -1,0 +1,68 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="About | FindVolleyball" description="Why FindVolleyball exists, and what it's trying to fix.">
+  <main class="about-page">
+    <h1>About FindVolleyball</h1>
+
+    <p>
+      Finding a local volleyball game is harder than it should be. Listings are scattered across Reclub, Meetup,
+      Goodrec, Facebook groups, and word of mouth — there's no single place to see what's actually happening
+      nearby, today, at a court you can get to.
+    </p>
+
+    <p>
+      FindVolleyball is a free, community-driven map that tries to fix that: one place to find indoor, grass, and
+      beach meetups, with the details that actually matter — cost, skill level, sign-up requirements, schedule —
+      filterable in one view instead of buried across five different apps.
+    </p>
+
+    <h2>Where we are right now</h2>
+    <p>
+      This is a pilot. Listings are concentrated in the Greater Los Angeles area for now, seeded from first-hand
+      organizer knowledge rather than a large open database — which means coverage is intentionally narrow at
+      launch, not comprehensive. New listings go through a quick manual review before they show up on the map, to
+      keep the data trustworthy while the community using it is still small.
+    </p>
+
+    <h2>Keeping it accurate</h2>
+    <p>
+      Every listing has a simple "still happening?" vote and a quiet report option, so stale or incorrect listings
+      surface naturally instead of sitting on the map indefinitely. If something looks wrong, use either one — it
+      helps everyone who looks at the map after you.
+    </p>
+
+    <p>
+      Want to add a meetup you organize or know about? Use the <a href="/submit">Add Entry</a> button — it takes
+      a couple minutes and goes into a short review queue before it's public.
+    </p>
+  </main>
+</BaseLayout>
+
+<style>
+  .about-page {
+    max-width: 32rem;
+    margin: 0 auto;
+    padding: 2rem 1rem 4rem;
+
+    h1 {
+      margin-bottom: 1rem;
+    }
+
+    h2 {
+      margin-top: 2rem;
+      font-size: 1.1rem;
+    }
+
+    p {
+      line-height: 1.6;
+      color: #333;
+    }
+
+    a {
+      color: var(--color-accent);
+      font-weight: 600;
+    }
+  }
+</style>
