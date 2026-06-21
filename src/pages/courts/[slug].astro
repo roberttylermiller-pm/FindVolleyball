@@ -46,6 +46,7 @@ const { title, description } = buildCourtMetadata({
       {listing.name ?? `${listing.type} volleyball in ${listing.neighborhood ?? listing.city}`}
       {listing.decayed && <span class="decayed-badge">Decayed — may no longer be active</span>}
     </h1>
+    {listing.address && <p class="court-address">{listing.address}</p>}
     <p>{listing.neighborhood ? `${listing.neighborhood}, ${listing.city}` : listing.city}</p>
     {listing.photo_url && <img class="court-photo" src={listing.photo_url} alt={listing.name ?? `${listing.type} volleyball court`} />}
     <dl>

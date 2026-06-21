@@ -32,10 +32,12 @@ export const POST: APIRoute = async ({ request, params }) => {
 
   if (!listing.slug) {
     try {
-      const { city, neighborhood, slug: candidateSlug, last_verified_date } = await assignPseoFields(listing);
+      const { city, neighborhood, address, slug: candidateSlug, last_verified_date } =
+        await assignPseoFields(listing);
       update.city = city;
       update.neighborhood = neighborhood;
-      update.slug = await findUniqueSlug(supabaseAdmin, candidateSlug);
+      update.address = address;
+      update.slug = await findUniqueSlug(supabaseAdmin, candidateSlug, listing.id);
       update.last_verified_date = last_verified_date;
     } catch (err) {
       return new Response(

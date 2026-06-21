@@ -23,6 +23,11 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
       <strong class="popup-title">${title}</strong>
       ${listing.decayed ? '<span class="popup-decayed">Decayed</span>' : ''}
     </div>
+    ${
+      listing.address || listing.city
+        ? `<div class="popup-address">${[listing.address, listing.neighborhood ?? listing.city].filter(Boolean).join(', ')}</div>`
+        : ''
+    }
     <div class="popup-meta">${capitalize(listing.type)} &middot; ${capitalize(listing.cost)} &middot; ${formatVisibilityLabel(listing.visibility)}</div>
     ${schedule ? `<div class="popup-row">When: ${schedule}</div>` : ''}
     <div class="popup-row">Sign-up required: ${listing.signup_required ? 'Yes' : 'No'}</div>

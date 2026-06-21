@@ -9,10 +9,12 @@ const GEOCODE_DELAY_MS = 1100;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
+  // Catches both never-geocoded listings (slug null) and ones geocoded
+  // before the `address` field existed (slug set, address still null).
   const { data: listings, error } = await supabaseAdmin
     .from('listings')
     .select('id, lat, lng, type, name')
-    .is('slug', null);
+    .or('slug.is.null,address.is.null');
 
   if (error) {
     console.error('Failed to fetch listings:', error.message);
@@ -27,13 +29,13 @@ async function main() {
 
   for (const listing of listings) {
     try {
-      const { city, neighborhood, slug: candidateSlug, last_verified_date } =
+      const { city, neighborhood, address, slug: candidateSlug, last_verified_date } =
         await assignPseoFields(listing);
-      const slug = await findUniqueSlug(supabaseAdmin, candidateSlug);
+      const slug = await findUniqueSlug(supabaseAdmin, candidateSlug, listing.id);
 
       const { error: updateError } = await supabaseAdmin
         .from('listings')
-        .update({ city, neighborhood, slug, last_verified_date })
+        .update({ city, neighborhood, address, slug, last_verified_date })
         .eq('id', listing.id);
 
       if (updateError) throw updateError;

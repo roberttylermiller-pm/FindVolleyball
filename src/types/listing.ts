@@ -39,6 +39,7 @@ export interface Listing {
   // not submitted directly by the user.
   city: string | null;
   neighborhood: string | null;
+  address: string | null;
   last_verified_date: string | null;
   slug: string | null;
 }
@@ -53,6 +54,7 @@ export type NewListing = Omit<
   | 'status'
   | 'city'
   | 'neighborhood'
+  | 'address'
   | 'last_verified_date'
   | 'slug'
 > & {

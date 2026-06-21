@@ -4,9 +4,14 @@ export interface ReverseGeocodeResult {
   // data (common for small standalone cities, e.g. West Hollywood — it
   // IS the city, with nothing finer-grained to report).
   neighborhood: string | null;
+  // Street-level address (e.g. "17361 Victory Blvd") — null when Nominatim
+  // has no road name for the point (e.g. a pin dropped in open parkland).
+  address: string | null;
 }
 
 interface NominatimAddress {
+  house_number?: string;
+  road?: string;
   neighbourhood?: string;
   suburb?: string;
   quarter?: string;
@@ -54,7 +59,9 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
     throw new Error(`Reverse geocode returned no usable city for ${lat},${lng}`);
   }
 
-  return { city, neighborhood };
+  const streetAddress = [address.house_number, address.road].filter(Boolean).join(' ') || null;
+
+  return { city, neighborhood, address: streetAddress };
 }
 
 export interface GeocodeLocationResult {
