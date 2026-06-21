@@ -1,6 +1,8 @@
 import { supabase } from '../supabase/client';
 import { formatDayTime } from './formatDayTime';
 import { capitalize } from '../text';
+import { formatVisibilityLabel } from './visibility';
+import { isEmailAddress, buildExternalLinkHref } from './externalLink';
 import type { Listing } from '../../types/listing';
 
 // Builds a real DOM element (not an HTML string) so vote/report buttons
@@ -21,15 +23,15 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
       <strong class="popup-title">${title}</strong>
       ${listing.decayed ? '<span class="popup-decayed">Decayed</span>' : ''}
     </div>
-    <div class="popup-meta">${capitalize(listing.type)} &middot; ${capitalize(listing.cost)} &middot; ${listing.visibility === 'public' ? 'Open Gym' : 'Private/Club'}</div>
-    ${schedule ? `<div class="popup-row">${schedule}</div>` : ''}
+    <div class="popup-meta">${capitalize(listing.type)} &middot; ${capitalize(listing.cost)} &middot; ${formatVisibilityLabel(listing.visibility)}</div>
+    ${schedule ? `<div class="popup-row">When: ${schedule}</div>` : ''}
     <div class="popup-row">Sign-up required: ${listing.signup_required ? 'Yes' : 'No'}</div>
     ${listing.min_skill_level ? `<div class="popup-row">Min skill: ${listing.min_skill_level}</div>` : ''}
     ${listing.equipment_supplied !== null ? `<div class="popup-row">Equipment supplied: ${listing.equipment_supplied ? 'Yes' : 'No'}</div>` : ''}
     ${listing.notes ? `<div class="popup-notes">${listing.notes}</div>` : ''}
     ${
       listing.external_link
-        ? `<a class="popup-link" href="${listing.external_link}" target="_blank" rel="noopener noreferrer">Join / view this meetup ↗</a>`
+        ? `<a class="popup-link" href="${buildExternalLinkHref(listing.external_link)}"${isEmailAddress(listing.external_link) ? '' : ' target="_blank" rel="noopener noreferrer"'}>View this meetup${isEmailAddress(listing.external_link) ? '' : ' ↗'}</a>`
         : ''
     }
     <div class="popup-votes">

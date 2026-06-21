@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase/client';
 import { buildCourtMetadata } from '../../lib/seo/courtMetadata';
 import { formatDayTime } from '../../lib/listings/formatDayTime';
 import { capitalize } from '../../lib/text';
+import { formatVisibilityLabel } from '../../lib/listings/visibility';
+import { isEmailAddress, buildExternalLinkHref } from '../../lib/listings/externalLink';
 import type { Listing } from '../../types/listing';
 
 export async function getStaticPaths() {
@@ -51,6 +53,8 @@ const { title, description } = buildCourtMetadata({
       <dd>{capitalize(listing.type)}</dd>
       <dt>Cost</dt>
       <dd>{capitalize(listing.cost)}</dd>
+      <dt>Visibility</dt>
+      <dd>{formatVisibilityLabel(listing.visibility)}</dd>
       {listing.days_times.length > 0 && (
         <>
           <dt>Days & Times</dt>
@@ -73,7 +77,15 @@ const { title, description } = buildCourtMetadata({
       )}
     </dl>
     {listing.external_link && (
-      <p><a href={listing.external_link} target="_blank" rel="noopener noreferrer">Join / view this meetup ↗</a></p>
+      <p>
+        <a
+          href={buildExternalLinkHref(listing.external_link)}
+          target={isEmailAddress(listing.external_link) ? undefined : '_blank'}
+          rel={isEmailAddress(listing.external_link) ? undefined : 'noopener noreferrer'}
+        >
+          View this meetup{!isEmailAddress(listing.external_link) && ' ↗'}
+        </a>
+      </p>
     )}
 
     <section class="vote-section">
