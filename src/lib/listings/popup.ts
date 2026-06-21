@@ -2,7 +2,7 @@ import { supabase } from '../supabase/client';
 import { formatDayTime } from './formatDayTime';
 import { capitalize } from '../text';
 import { formatVisibilityLabel } from './visibility';
-import { isEmailAddress, buildExternalLinkHref } from './externalLink';
+import { isEmailAddress, buildExternalLinkHref, getExternalLinkLabel } from './externalLink';
 import type { Listing } from '../../types/listing';
 
 // Builds a real DOM element (not an HTML string) so vote/report buttons
@@ -38,7 +38,7 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
     ${listing.notes ? `<div class="popup-notes">${listing.notes}</div>` : ''}
     ${
       listing.external_link
-        ? `<a class="popup-link" href="${buildExternalLinkHref(listing.external_link)}"${isEmailAddress(listing.external_link) ? '' : ' target="_blank" rel="noopener noreferrer"'}>View this meetup${isEmailAddress(listing.external_link) ? '' : ' ↗'}</a>`
+        ? `<a class="popup-link" href="${buildExternalLinkHref(listing.external_link)}"${isEmailAddress(listing.external_link) ? '' : ' target="_blank" rel="noopener noreferrer"'}>${getExternalLinkLabel(listing.external_link)}${isEmailAddress(listing.external_link) ? '' : ' ↗'}</a>`
         : ''
     }
     <div class="popup-votes">

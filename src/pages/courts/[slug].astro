@@ -5,7 +5,7 @@ import { buildCourtMetadata } from '../../lib/seo/courtMetadata';
 import { formatDayTime } from '../../lib/listings/formatDayTime';
 import { capitalize } from '../../lib/text';
 import { formatVisibilityLabel } from '../../lib/listings/visibility';
-import { isEmailAddress, buildExternalLinkHref } from '../../lib/listings/externalLink';
+import { isEmailAddress, buildExternalLinkHref, getExternalLinkLabel } from '../../lib/listings/externalLink';
 import type { Listing } from '../../types/listing';
 
 export async function getStaticPaths() {
@@ -96,7 +96,7 @@ const { title, description } = buildCourtMetadata({
           target={isEmailAddress(listing.external_link) ? undefined : '_blank'}
           rel={isEmailAddress(listing.external_link) ? undefined : 'noopener noreferrer'}
         >
-          View this meetup{!isEmailAddress(listing.external_link) && ' ↗'}
+          {getExternalLinkLabel(listing.external_link)}{!isEmailAddress(listing.external_link) && ' ↗'}
         </a>
       </p>
     )}

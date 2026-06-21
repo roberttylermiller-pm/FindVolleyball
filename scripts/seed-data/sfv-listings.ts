@@ -150,7 +150,7 @@ export const seedListings: NewListing[] = [
       { day: 'sun', start_time: null, end_time: null },
     ],
     signup_required: true,
-    external_link: null,
+    external_link: 'robert.tyler.miller@gmail.com',
     min_skill_level: 'B',
     equipment_supplied: true,
     notes: null,

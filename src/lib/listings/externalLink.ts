@@ -8,3 +8,9 @@ export function isEmailAddress(value: string): boolean {
 export function buildExternalLinkHref(value: string): string {
   return isEmailAddress(value) ? `mailto:${value}` : value;
 }
+
+// "View this meetup" doesn't make sense for a bare email contact — read
+// as "Contact" instead, since there's nothing to "view".
+export function getExternalLinkLabel(value: string): string {
+  return isEmailAddress(value) ? 'Contact' : 'View this meetup';
+}
