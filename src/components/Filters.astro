@@ -1,41 +1,77 @@
 <div class="filters">
   <fieldset>
     <legend>Type</legend>
-    <label><input type="checkbox" name="type" value="indoor" checked /> Indoor</label>
-    <label><input type="checkbox" name="type" value="grass" checked /> Grass</label>
-    <label><input type="checkbox" name="type" value="beach" checked /> Beach</label>
+    <label class="chip"><input type="checkbox" name="type" value="indoor" checked /><span>Indoor</span></label>
+    <label class="chip"><input type="checkbox" name="type" value="grass" checked /><span>Grass</span></label>
+    <label class="chip"><input type="checkbox" name="type" value="beach" checked /><span>Beach</span></label>
   </fieldset>
+  <div class="filters-divider"></div>
   <fieldset>
     <legend>Cost</legend>
-    <label><input type="checkbox" name="cost" value="free" checked /> Free</label>
-    <label><input type="checkbox" name="cost" value="paid" checked /> Paid</label>
+    <label class="chip"><input type="checkbox" name="cost" value="free" checked /><span>Free</span></label>
+    <label class="chip"><input type="checkbox" name="cost" value="paid" checked /><span>Paid</span></label>
   </fieldset>
 </div>
 
 <style>
   .filters {
     display: flex;
-    gap: 1.5rem;
-    padding: 0.75rem 1rem;
-    background: white;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.65rem;
+    background: #1a1a1a;
     border-radius: 0.5rem;
     box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
 
     fieldset {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
       margin: 0;
       padding: 0;
       border: none;
 
       legend {
-        margin-bottom: 0.25rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
+        /* Visually hidden but still announced by screen readers — the
+           chip labels (Indoor/Grass/Beach) are self-explanatory without
+           a "Type:" prefix, and dropping it keeps the panel compact. */
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+      }
+    }
+
+    .filters-divider {
+      width: 1px;
+      height: 1.1rem;
+      background: rgb(255 255 255 / 15%);
+    }
+
+    .chip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.65rem;
+      font-size: 0.75rem;
+      color: #ccc;
+      background: rgb(255 255 255 / 8%);
+      border-radius: 999px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s, color 0.15s;
+
+      input {
+        position: absolute;
+        width: 0;
+        height: 0;
+        opacity: 0;
       }
 
-      label {
-        display: block;
-        font-size: 0.875rem;
+      &:has(input:checked) {
+        color: white;
+        background: var(--color-accent);
       }
     }
   }

@@ -70,14 +70,14 @@ import 'leaflet/dist/leaflet.css';
   import L from 'leaflet';
   import { fixDefaultMarkerIcon } from '../lib/map/fixDefaultIcon';
   import { geocodeLocation } from '../lib/geocode';
-  import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from '../lib/map/constants';
+  import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, TILE_LAYER_URL, TILE_LAYER_ATTRIBUTION } from '../lib/map/constants';
 
   fixDefaultMarkerIcon();
 
   const map = L.map('picker-map').setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  L.tileLayer(TILE_LAYER_URL, {
+    attribution: TILE_LAYER_ATTRIBUTION,
     maxZoom: 19,
   }).addTo(map);
 

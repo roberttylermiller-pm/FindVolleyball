@@ -1,45 +1,93 @@
-import type { DayTime, Listing } from '../../types/listing';
+import { supabase } from '../supabase/client';
+import { formatDayTime } from './formatDayTime';
+import type { Listing } from '../../types/listing';
 
-function formatDayTime(dt: DayTime): string {
-  const dayLabel = dt.day.charAt(0).toUpperCase() + dt.day.slice(1);
-  if (!dt.start_time && !dt.end_time) return dayLabel;
-  if (dt.start_time && dt.end_time) return `${dayLabel} ${dt.start_time}–${dt.end_time}`;
-  return `${dayLabel} ${dt.start_time ?? dt.end_time}`;
-}
+// Builds a real DOM element (not an HTML string) so vote/report buttons
+// can have listeners attached directly — Leaflet's bindPopup() accepts
+// either, and an element is the only way to wire up interactivity without
+// re-binding on every popupopen event. Each marker gets its own element,
+// so there's no delegation/cleanup to worry about.
+export function buildListingPopupContent(listing: Listing): HTMLElement {
+  const container = document.createElement('div');
+  container.className = 'listing-popup';
 
-// Marker popup doubles as the listing detail view (ROB-16) — full info
-// inline for a quick mobile-friendly read, with a link to the static
-// /courts/[slug] page (when geocoded) for the complete shareable page.
-export function buildListingPopupHtml(listing: Listing): string {
   const title = listing.name ?? `${listing.type} volleyball`;
-  const lines: string[] = [
-    `<strong>${title}</strong>${listing.decayed ? ' <em>(decayed — may no longer be active)</em>' : ''}`,
-    `${listing.type} · ${listing.cost} · ${listing.visibility === 'public' ? 'Open Gym' : 'Private/Club'}`,
-  ];
+  const schedule = listing.days_times.length > 0 ? listing.days_times.map(formatDayTime).join(', ') : null;
 
-  if (listing.days_times.length > 0) {
-    lines.push(listing.days_times.map(formatDayTime).join(', '));
+  container.innerHTML = `
+    <div class="popup-title-row">
+      <strong class="popup-title">${title}</strong>
+      ${listing.decayed ? '<span class="popup-decayed">Decayed</span>' : ''}
+    </div>
+    <div class="popup-meta">${listing.type} &middot; ${listing.cost} &middot; ${listing.visibility === 'public' ? 'Open Gym' : 'Private/Club'}</div>
+    ${schedule ? `<div class="popup-row">${schedule}</div>` : ''}
+    <div class="popup-row">Sign-up required: ${listing.signup_required ? 'Yes' : 'No'}</div>
+    ${listing.min_skill_level ? `<div class="popup-row">Min skill: ${listing.min_skill_level}</div>` : ''}
+    ${listing.equipment_supplied !== null ? `<div class="popup-row">Equipment supplied: ${listing.equipment_supplied ? 'Yes' : 'No'}</div>` : ''}
+    ${listing.notes ? `<div class="popup-notes">${listing.notes}</div>` : ''}
+    ${
+      listing.external_link
+        ? `<a class="popup-link" href="${listing.external_link}" target="_blank" rel="noopener noreferrer">Join / view this meetup ↗</a>`
+        : ''
+    }
+    <div class="popup-votes">
+      <span>Still happening?</span>
+      <button type="button" class="popup-vote-up" aria-label="Still active">👍</button>
+      <button type="button" class="popup-vote-down" aria-label="No longer active">👎</button>
+      <span class="popup-vote-message"></span>
+    </div>
+    <button type="button" class="popup-report-toggle">Report an issue</button>
+    <form class="popup-report-form" hidden>
+      <textarea name="note" maxlength="250" required placeholder="What's wrong? (250 char max)"></textarea>
+      <button type="submit">Submit</button>
+    </form>
+    <p class="popup-report-message"></p>
+    ${listing.slug ? `<a class="popup-permalink" href="/courts/${listing.slug}">Permalink</a>` : ''}
+  `;
+
+  const voteUp = container.querySelector<HTMLButtonElement>('.popup-vote-up');
+  const voteDown = container.querySelector<HTMLButtonElement>('.popup-vote-down');
+  const voteMessage = container.querySelector<HTMLSpanElement>('.popup-vote-message');
+
+  async function castVote(voteType: 'up' | 'down') {
+    voteUp?.setAttribute('disabled', 'true');
+    voteDown?.setAttribute('disabled', 'true');
+
+    const { error } = await supabase.from('votes').insert({ listing_id: listing.id, vote_type: voteType });
+
+    if (voteMessage) {
+      voteMessage.textContent = error ? 'Something went wrong.' : 'Thanks!';
+    }
   }
 
-  lines.push(`Sign-up required: ${listing.signup_required ? 'Yes' : 'No'}`);
+  voteUp?.addEventListener('click', () => castVote('up'));
+  voteDown?.addEventListener('click', () => castVote('down'));
 
-  if (listing.min_skill_level) {
-    lines.push(`Min skill: ${listing.min_skill_level}`);
-  }
+  const reportToggle = container.querySelector<HTMLButtonElement>('.popup-report-toggle');
+  const reportForm = container.querySelector<HTMLFormElement>('.popup-report-form');
+  const reportMessage = container.querySelector<HTMLParagraphElement>('.popup-report-message');
 
-  if (listing.equipment_supplied !== null) {
-    lines.push(`Equipment supplied: ${listing.equipment_supplied ? 'Yes' : 'No'}`);
-  }
+  reportToggle?.addEventListener('click', () => {
+    if (reportForm) reportForm.hidden = !reportForm.hidden;
+  });
 
-  if (listing.notes) {
-    lines.push(listing.notes);
-  }
+  reportForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = new FormData(reportForm);
+    const note = String(formData.get('note') ?? '').trim();
+    if (!note) return;
 
-  if (listing.slug) {
-    lines.push(`<a href="/courts/${listing.slug}">View full details</a>`);
-  } else if (listing.external_link) {
-    lines.push(`<a href="${listing.external_link}">Join / view this meetup</a>`);
-  }
+    const { error } = await supabase.from('reports').insert({ listing_id: listing.id, note });
 
-  return lines.join('<br>');
+    if (reportMessage) {
+      reportMessage.textContent = error ? 'Something went wrong.' : "Thanks — we'll take a look.";
+    }
+
+    if (!error) {
+      reportForm.reset();
+      reportForm.hidden = true;
+    }
+  });
+
+  return container;
 }

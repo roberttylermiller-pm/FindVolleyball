@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { supabase } from '../../lib/supabase/client';
 import { buildCourtMetadata } from '../../lib/seo/courtMetadata';
+import { formatDayTime } from '../../lib/listings/formatDayTime';
 import type { Listing } from '../../types/listing';
 
 export async function getStaticPaths() {
@@ -48,6 +49,12 @@ const { title, description } = buildCourtMetadata({
       <dd>{listing.type}</dd>
       <dt>Cost</dt>
       <dd>{listing.cost}</dd>
+      {listing.days_times.length > 0 && (
+        <>
+          <dt>Days & Times</dt>
+          <dd>{listing.days_times.map(formatDayTime).join(', ')}</dd>
+        </>
+      )}
       <dt>Sign-up required</dt>
       <dd>{listing.signup_required ? 'Yes' : 'No'}</dd>
       {listing.min_skill_level && (
@@ -64,7 +71,7 @@ const { title, description } = buildCourtMetadata({
       )}
     </dl>
     {listing.external_link && (
-      <p><a href={listing.external_link}>Join / view this meetup</a></p>
+      <p><a href={listing.external_link} target="_blank" rel="noopener noreferrer">Join / view this meetup ↗</a></p>
     )}
 
     <section class="vote-section">
