@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { supabase } from '../../lib/supabase/client';
 import { buildCourtMetadata } from '../../lib/seo/courtMetadata';
 import { formatDayTime } from '../../lib/listings/formatDayTime';
+import { capitalize } from '../../lib/text';
 import type { Listing } from '../../types/listing';
 
 export async function getStaticPaths() {
@@ -46,9 +47,9 @@ const { title, description } = buildCourtMetadata({
     <p>{listing.neighborhood ? `${listing.neighborhood}, ${listing.city}` : listing.city}</p>
     <dl>
       <dt>Surface</dt>
-      <dd>{listing.type}</dd>
+      <dd>{capitalize(listing.type)}</dd>
       <dt>Cost</dt>
-      <dd>{listing.cost}</dd>
+      <dd>{capitalize(listing.cost)}</dd>
       {listing.days_times.length > 0 && (
         <>
           <dt>Days & Times</dt>
@@ -152,7 +153,7 @@ const { title, description } = buildCourtMetadata({
     cursor: pointer;
   }
 
-  #report-form {
+  #report-form:not([hidden]) {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;

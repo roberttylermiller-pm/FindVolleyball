@@ -1,5 +1,6 @@
 import { supabase } from '../supabase/client';
 import { formatDayTime } from './formatDayTime';
+import { capitalize } from '../text';
 import type { Listing } from '../../types/listing';
 
 // Builds a real DOM element (not an HTML string) so vote/report buttons
@@ -19,7 +20,7 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
       <strong class="popup-title">${title}</strong>
       ${listing.decayed ? '<span class="popup-decayed">Decayed</span>' : ''}
     </div>
-    <div class="popup-meta">${listing.type} &middot; ${listing.cost} &middot; ${listing.visibility === 'public' ? 'Open Gym' : 'Private/Club'}</div>
+    <div class="popup-meta">${capitalize(listing.type)} &middot; ${capitalize(listing.cost)} &middot; ${listing.visibility === 'public' ? 'Open Gym' : 'Private/Club'}</div>
     ${schedule ? `<div class="popup-row">${schedule}</div>` : ''}
     <div class="popup-row">Sign-up required: ${listing.signup_required ? 'Yes' : 'No'}</div>
     ${listing.min_skill_level ? `<div class="popup-row">Min skill: ${listing.min_skill_level}</div>` : ''}

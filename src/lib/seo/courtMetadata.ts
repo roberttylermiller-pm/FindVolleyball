@@ -1,4 +1,5 @@
 import type { ListingType } from '../../types/listing';
+import { capitalize } from '../text';
 
 export interface CourtMetadataInput {
   type: ListingType;
@@ -9,10 +10,6 @@ export interface CourtMetadataInput {
 export interface CourtMetadata {
   title: string;
   description: string;
-}
-
-function capitalize(word: string): string {
-  return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
 // Formulas agreed for the M2.5 pSEO pivot:
