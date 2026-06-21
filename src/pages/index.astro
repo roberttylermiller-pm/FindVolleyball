@@ -3,10 +3,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Map from '../components/Map.astro';
 import Filters from '../components/Filters.astro';
 import LocationSearch from '../components/LocationSearch.astro';
+import WelcomeModal from '../components/WelcomeModal.astro';
 ---
 
 <BaseLayout>
   <main>
+    <WelcomeModal />
     <div class="map-controls">
       <LocationSearch />
       <Filters />
