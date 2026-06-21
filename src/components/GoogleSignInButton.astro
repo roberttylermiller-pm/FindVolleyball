@@ -40,11 +40,12 @@
 
 <script>
   import { supabase } from '../lib/supabase/client';
+  import { getRedirectParam } from '../lib/auth/redirect';
 
   document.querySelector('#google-sign-in')?.addEventListener('click', async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: `${window.location.origin}${getRedirectParam()}` },
     });
   });
 </script>

@@ -19,7 +19,7 @@ import GoogleSignInButton from '../components/GoogleSignInButton.astro';
       <button type="submit">Sign up</button>
     </form>
     <p id="signup-message" role="status"></p>
-    <p>Already have an account? <a href="/login">Sign in</a></p>
+    <p>Already have an account? <a id="login-link" href="/login">Sign in</a></p>
   </main>
 </BaseLayout>
 
@@ -63,6 +63,14 @@ import GoogleSignInButton from '../components/GoogleSignInButton.astro';
 
 <script>
   import { supabase } from '../lib/supabase/client';
+  import { getRedirectParam } from '../lib/auth/redirect';
+
+  const redirectTo = getRedirectParam();
+
+  const loginLink = document.querySelector<HTMLAnchorElement>('#login-link');
+  if (loginLink && redirectTo !== '/') {
+    loginLink.href = `/login?redirect=${encodeURIComponent(redirectTo)}`;
+  }
 
   const form = document.querySelector<HTMLFormElement>('#signup-form');
   const message = document.querySelector<HTMLParagraphElement>('#signup-message');
@@ -87,7 +95,7 @@ import GoogleSignInButton from '../components/GoogleSignInButton.astro';
     }
 
     if (data.session) {
-      window.location.href = '/';
+      window.location.href = redirectTo;
     }
   });
 </script>

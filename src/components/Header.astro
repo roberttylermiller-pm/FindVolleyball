@@ -11,9 +11,12 @@
     </svg>
     <span class="brand-wordmark">FindVolleyball</span>
   </a>
-  <div id="auth-status" class="auth-status">
-    <a href="/login">Sign in</a>
-    <a href="/signup">Sign up</a>
+  <div class="header-actions">
+    <a id="add-entry-btn" class="add-entry-btn" href="/login?redirect=/submit">Add Entry</a>
+    <div id="auth-status" class="auth-status">
+      <a href="/login">Sign in</a>
+      <a href="/signup">Sign up</a>
+    </div>
   </div>
 </header>
 
@@ -40,6 +43,22 @@
       flex-shrink: 0;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .add-entry-btn {
+      padding: 0.4rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: white;
+      background: var(--color-accent);
+      border-radius: 0.3rem;
+      text-decoration: none;
+    }
+
     .auth-status {
       display: flex;
       align-items: center;
@@ -64,6 +83,7 @@
   import { supabase } from '../lib/supabase/client';
 
   const container = document.querySelector<HTMLDivElement>('#auth-status');
+  const addEntryBtn = document.querySelector<HTMLAnchorElement>('#add-entry-btn');
 
   function renderSignedOut() {
     if (!container) return;
@@ -83,6 +103,9 @@
   // no separate getSession() call needed.
   supabase.auth.onAuthStateChange((_event, session) => {
     const email = session?.user.email;
+    if (addEntryBtn) {
+      addEntryBtn.href = email ? '/submit' : '/login?redirect=/submit';
+    }
     if (email) {
       renderSignedIn(email);
     } else {
