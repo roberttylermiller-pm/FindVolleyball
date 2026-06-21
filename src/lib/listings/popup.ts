@@ -16,6 +16,7 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
   const schedule = listing.days_times.length > 0 ? listing.days_times.map(formatDayTime).join(', ') : null;
 
   container.innerHTML = `
+    ${listing.photo_url ? `<img class="popup-photo" src="${listing.photo_url}" alt="${title}" />` : ''}
     <div class="popup-title-row">
       <strong class="popup-title">${title}</strong>
       ${listing.decayed ? '<span class="popup-decayed">Decayed</span>' : ''}

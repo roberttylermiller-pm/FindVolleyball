@@ -25,6 +25,7 @@ export interface Listing {
   equipment_supplied: boolean | null;
   notes: string | null;
   visibility: Visibility;
+  photo_url: string | null;
   status: ListingStatus;
   decayed: boolean;
   last_upvote_at: string | null;

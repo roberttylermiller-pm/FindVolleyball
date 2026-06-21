@@ -22,6 +22,7 @@ export const seedListings: NewListing[] = [
       "The grass is worn down so it's mostly dirt. Wear shoes! 6v6, tons of nets, no wait times. " +
       'Games run until sundown. Also see meetup.com/burbank-rec-club.',
     visibility: 'public',
+    photo_url: null,
     submitted_by: null,
   },
   {
@@ -37,6 +38,7 @@ export const seedListings: NewListing[] = [
     equipment_supplied: true,
     notes: 'Schedule is sporadic — check Meetup for upcoming session times.',
     visibility: 'public',
+    photo_url: null,
     submitted_by: null,
   },
   {
@@ -52,6 +54,7 @@ export const seedListings: NewListing[] = [
     equipment_supplied: true,
     notes: 'Women only',
     visibility: 'public',
+    photo_url: null,
     submitted_by: null,
   },
   {
@@ -67,6 +70,7 @@ export const seedListings: NewListing[] = [
     equipment_supplied: true,
     notes: null,
     visibility: 'public',
+    photo_url: null,
     submitted_by: null,
   },
   {
@@ -82,6 +86,7 @@ export const seedListings: NewListing[] = [
     equipment_supplied: true,
     notes: null,
     visibility: 'public',
+    photo_url: null,
     submitted_by: null,
   },
   {
@@ -100,6 +105,7 @@ export const seedListings: NewListing[] = [
     equipment_supplied: null,
     notes: null,
     visibility: 'public',
+    photo_url: null,
     submitted_by: null,
   },
   {
@@ -115,6 +121,7 @@ export const seedListings: NewListing[] = [
     equipment_supplied: null,
     notes: null,
     visibility: 'public',
+    photo_url: null,
     submitted_by: null,
   },
   {
@@ -134,6 +141,7 @@ export const seedListings: NewListing[] = [
     equipment_supplied: true,
     notes: null,
     visibility: 'private',
+    photo_url: null,
     submitted_by: null,
   },
 ];
