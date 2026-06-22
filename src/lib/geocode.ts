@@ -4,8 +4,12 @@ export interface ReverseGeocodeResult {
   // data (common for small standalone cities, e.g. West Hollywood — it
   // IS the city, with nothing finer-grained to report).
   neighborhood: string | null;
-  // Street-level address (e.g. "17361 Victory Blvd") — null when Nominatim
-  // has no road name for the point (e.g. a pin dropped in open parkland).
+  // Full mailing address ("5015 Tujunga Ave, North Hollywood, CA 91601")
+  // — null only when Nominatim has no road name for the point at all
+  // (e.g. a pin dropped in open parkland). House number, state, and zip
+  // are each individually optional since Nominatim doesn't always have
+  // them, but city is required (see below) so the address always has
+  // somewhere to anchor to.
   address: string | null;
 }
 
@@ -18,7 +22,25 @@ interface NominatimAddress {
   city?: string;
   town?: string;
   village?: string;
+  state?: string;
+  postcode?: string;
 }
+
+// Nominatim returns full state names ("California"), not USPS
+// abbreviations — needed for a mailing-address-shaped display string.
+const US_STATE_ABBREVIATIONS: Record<string, string> = {
+  Alabama: 'AL', Alaska: 'AK', Arizona: 'AZ', Arkansas: 'AR', California: 'CA',
+  Colorado: 'CO', Connecticut: 'CT', Delaware: 'DE', Florida: 'FL', Georgia: 'GA',
+  Hawaii: 'HI', Idaho: 'ID', Illinois: 'IL', Indiana: 'IN', Iowa: 'IA',
+  Kansas: 'KS', Kentucky: 'KY', Louisiana: 'LA', Maine: 'ME', Maryland: 'MD',
+  Massachusetts: 'MA', Michigan: 'MI', Minnesota: 'MN', Mississippi: 'MS', Missouri: 'MO',
+  Montana: 'MT', Nebraska: 'NE', Nevada: 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+  'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', Ohio: 'OH',
+  Oklahoma: 'OK', Oregon: 'OR', Pennsylvania: 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+  'South Dakota': 'SD', Tennessee: 'TN', Texas: 'TX', Utah: 'UT', Vermont: 'VT',
+  Virginia: 'VA', Washington: 'WA', 'West Virginia': 'WV', Wisconsin: 'WI', Wyoming: 'WY',
+  'District of Columbia': 'DC',
+};
 
 // Nominatim (OpenStreetMap) — free, no API key, consistent with the
 // earlier decision to avoid Google Maps costs. Usage policy caps this at
@@ -31,7 +53,9 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
   url.searchParams.set('lat', String(lat));
   url.searchParams.set('lon', String(lng));
   url.searchParams.set('format', 'jsonv2');
-  url.searchParams.set('zoom', '16');
+  // zoom=18 (rooftop-level) is what gets Nominatim to actually include a
+  // house_number — zoom=16 (street-level) only returns the road name.
+  url.searchParams.set('zoom', '18');
   url.searchParams.set('addressdetails', '1');
 
   const response = await fetch(url, {
@@ -59,9 +83,12 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
     throw new Error(`Reverse geocode returned no usable city for ${lat},${lng}`);
   }
 
-  const streetAddress = [address.house_number, address.road].filter(Boolean).join(' ') || null;
+  const street = [address.house_number, address.road].filter(Boolean).join(' ');
+  const stateAbbreviation = address.state ? US_STATE_ABBREVIATIONS[address.state] ?? address.state : null;
+  const stateZip = [stateAbbreviation, address.postcode].filter(Boolean).join(' ');
+  const fullAddress = [street, city, stateZip].filter(Boolean).join(', ') || null;
 
-  return { city, neighborhood, address: streetAddress };
+  return { city, neighborhood, address: fullAddress };
 }
 
 export interface GeocodeLocationResult {

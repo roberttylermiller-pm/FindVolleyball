@@ -11,20 +11,30 @@ const DAYS: Array<{ value: string; label: string }> = [
 ---
 
 <fieldset class="day-time-picker">
-  <legend>Days & Times</legend>
-  {
-    DAYS.map(({ value, label }) => (
-      <div class="day-row" data-day={value}>
-        <label class="day-checkbox">
-          <input type="checkbox" name="days" value={value} />
-          {label}
+  <legend>Days & Times *</legend>
+  <p class="hint">Pick the days it happens — times are optional if it's not at a fixed time.</p>
+  <div class="day-chips">
+    {
+      DAYS.map(({ value, label }) => (
+        <label class="day-chip">
+          <input type="checkbox" name="days" value={value} data-day={value} />
+          <span>{label}</span>
         </label>
-        <input type="time" name={`start_${value}`} disabled aria-label={`${label} start time`} />
-        <span>to</span>
-        <input type="time" name={`end_${value}`} disabled aria-label={`${label} end time`} />
-      </div>
-    ))
-  }
+      ))
+    }
+  </div>
+  <div class="day-time-rows">
+    {
+      DAYS.map(({ value, label }) => (
+        <div class="day-time-row" data-day-row={value} hidden>
+          <span class="day-time-row-label">{label}</span>
+          <input type="time" name={`start_${value}`} aria-label={`${label} start time`} />
+          <span>to</span>
+          <input type="time" name={`end_${value}`} aria-label={`${label} end time`} />
+        </div>
+      ))
+    }
+  </div>
 </fieldset>
 
 <style>
@@ -34,23 +44,78 @@ const DAYS: Array<{ value: string; label: string }> = [
     border: none;
 
     legend {
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
       font-size: 0.875rem;
       font-weight: 600;
     }
 
-    .day-row {
+    .hint {
+      margin: 0 0 0.6rem;
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .day-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .day-chip {
+      position: relative;
+
+      input {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        cursor: pointer;
+      }
+
+      span {
+        display: block;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--color-text);
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 999px;
+        user-select: none;
+      }
+
+      input:checked + span {
+        color: white;
+        background: var(--color-accent);
+        border-color: var(--color-accent);
+      }
+
+      input:focus-visible + span {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 1px;
+      }
+    }
+
+    .day-time-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-top: 0.6rem;
+    }
+
+    .day-time-row {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.25rem 0;
+      padding: 0.4rem 0.6rem;
+      background: var(--color-bg);
+      border-radius: 0.375rem;
 
-      .day-checkbox {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        width: 4rem;
-        font-size: 0.875rem;
+      .day-time-row-label {
+        width: 3rem;
+        font-size: 0.85rem;
+        font-weight: 600;
       }
 
       input[type="time"] {
@@ -58,24 +123,27 @@ const DAYS: Array<{ value: string; label: string }> = [
         font-size: 0.875rem;
       }
 
-      input[type="time"]:disabled {
-        background: var(--color-bg);
+      span:not(.day-time-row-label) {
+        font-size: 0.8rem;
+        color: #666;
       }
     }
   }
 </style>
 
 <script>
-  const rows = document.querySelectorAll<HTMLDivElement>('.day-time-picker .day-row');
+  const chipInputs = document.querySelectorAll<HTMLInputElement>('.day-chip input[type="checkbox"]');
 
-  for (const row of rows) {
-    const checkbox = row.querySelector<HTMLInputElement>('input[type="checkbox"]');
-    const timeInputs = row.querySelectorAll<HTMLInputElement>('input[type="time"]');
+  for (const input of chipInputs) {
+    const row = document.querySelector<HTMLDivElement>(`[data-day-row="${input.dataset.day}"]`);
 
-    checkbox?.addEventListener('change', () => {
-      for (const input of timeInputs) {
-        input.disabled = !checkbox.checked;
-        if (!checkbox.checked) input.value = '';
+    input.addEventListener('change', () => {
+      if (!row) return;
+      row.hidden = !input.checked;
+      if (!input.checked) {
+        for (const timeInput of row.querySelectorAll<HTMLInputElement>('input[type="time"]')) {
+          timeInput.value = '';
+        }
       }
     });
   }

@@ -6,6 +6,7 @@ import { formatDayTime } from '../../lib/listings/formatDayTime';
 import { capitalize } from '../../lib/text';
 import { formatVisibilityLabel } from '../../lib/listings/visibility';
 import { isEmailAddress, buildExternalLinkHref, getExternalLinkLabel } from '../../lib/listings/externalLink';
+import { buildMapsHref, formatAddressDisplay } from '../../lib/listings/address';
 import type { Listing } from '../../types/listing';
 
 export async function getStaticPaths() {
@@ -46,8 +47,15 @@ const { title, description } = buildCourtMetadata({
       {listing.name ?? `${listing.type} volleyball in ${listing.neighborhood ?? listing.city}`}
       {listing.decayed && <span class="decayed-badge">Decayed — may no longer be active</span>}
     </h1>
-    {listing.address && <p class="court-address">{listing.address}</p>}
-    <p>{listing.neighborhood ? `${listing.neighborhood}, ${listing.city}` : listing.city}</p>
+    {
+      formatAddressDisplay(listing) && (
+        <p>
+          <a class="court-address" href={buildMapsHref(listing)} target="_blank" rel="noopener noreferrer">
+            {formatAddressDisplay(listing)}
+          </a>
+        </p>
+      )
+    }
     {listing.photo_url && <img class="court-photo" src={listing.photo_url} alt={listing.name ?? `${listing.type} volleyball court`} />}
     <dl>
       <dt>Surface</dt>
@@ -126,9 +134,16 @@ const { title, description } = buildCourtMetadata({
 
 <style>
   .court-page {
+    width: 100%;
     max-width: 32rem;
     margin: 0 auto;
     padding: 2rem 1rem 4rem;
+  }
+
+  .court-address {
+    color: var(--color-accent);
+    font-weight: 600;
+    text-decoration: underline;
   }
 
   .court-photo {

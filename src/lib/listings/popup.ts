@@ -3,6 +3,7 @@ import { formatDayTime } from './formatDayTime';
 import { capitalize } from '../text';
 import { formatVisibilityLabel } from './visibility';
 import { isEmailAddress, buildExternalLinkHref, getExternalLinkLabel } from './externalLink';
+import { buildMapsHref, formatAddressDisplay } from './address';
 import type { Listing } from '../../types/listing';
 
 // Builds a real DOM element (not an HTML string) so vote/report buttons
@@ -29,8 +30,8 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
         : ''
     }
     ${
-      listing.address || listing.city
-        ? `<div class="popup-address">${[listing.address, listing.neighborhood ?? listing.city].filter(Boolean).join(', ')}</div>`
+      formatAddressDisplay(listing)
+        ? `<a class="popup-address" href="${buildMapsHref(listing)}" target="_blank" rel="noopener noreferrer">${formatAddressDisplay(listing)}</a>`
         : ''
     }
     <div class="popup-meta">${capitalize(listing.type)} &middot; ${capitalize(listing.cost)} &middot; ${formatVisibilityLabel(listing.visibility)}</div>

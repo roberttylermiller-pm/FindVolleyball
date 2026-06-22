@@ -41,8 +41,9 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       </label>
 
       <label>
-        External link (optional)
-        <input type="url" name="external_link" placeholder="https://..." />
+        Meetup link or contact email (optional)
+        <input type="text" name="external_link" placeholder="https://meetup.com/... or your email" />
+        <span class="field-hint">A signup/event page link, or an email if you don't have one.</span>
       </label>
 
       <label>
@@ -102,6 +103,7 @@ import DayTimePicker from '../components/DayTimePicker.astro';
 
 <style>
   .submit-page {
+    width: 100%;
     max-width: 32rem;
     margin: 0 auto;
     padding: 2rem 1rem 4rem;
