@@ -23,3 +23,12 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
 }
+
+/* Sticky footer: main grows to fill any leftover height so the footer
+   sits at the true bottom of the viewport on short pages (e.g. About)
+   instead of wherever the content happens to end. Pages with their own
+   layout needs (the map's full-bleed main) already set their own flex
+   value, which simply overrides this. */
+body > main {
+  flex: 1;
+}
