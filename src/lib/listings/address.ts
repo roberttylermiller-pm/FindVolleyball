@@ -1,11 +1,12 @@
 import type { Listing } from '../../types/listing';
 
-// Coordinates rather than the address text — guarantees an accurate pin
-// even when Nominatim's address breakdown is partial (missing house
-// number, etc.), and works as a deep link into whichever map app the
-// user's device defaults to (Google Maps, Apple Maps, etc.).
+// Prefer the actual address text — Maps shows a recognizable place
+// (with the venue's name search-matched where possible) instead of a
+// bare coordinate pin. Falls back to lat/lng only when there's no
+// address text to use (e.g. Nominatim had no road name for the point).
 export function buildMapsHref(listing: Listing): string {
-  return `https://www.google.com/maps/search/?api=1&query=${listing.lat},${listing.lng}`;
+  const query = formatAddressDisplay(listing) ?? `${listing.lat},${listing.lng}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
 // `address` is the full formatted mailing address when present (street,

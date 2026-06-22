@@ -31,7 +31,7 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
     }
     ${
       formatAddressDisplay(listing)
-        ? `<a class="popup-address" href="${buildMapsHref(listing)}" target="_blank" rel="noopener noreferrer">${formatAddressDisplay(listing)}</a>`
+        ? `<a class="popup-address" href="${buildMapsHref(listing)}" target="_blank" rel="noopener noreferrer">📍 ${formatAddressDisplay(listing)}</a>`
         : ''
     }
     <div class="popup-meta">${capitalize(listing.type)} &middot; ${listing.cost ? capitalize(listing.cost) : 'Cost unknown'} &middot; ${formatVisibilityLabel(listing.visibility)}</div>

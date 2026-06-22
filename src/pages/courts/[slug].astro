@@ -9,31 +9,28 @@ import { isEmailAddress, buildExternalLinkHref, getExternalLinkLabel } from '../
 import { buildMapsHref, formatAddressDisplay } from '../../lib/listings/address';
 import type { Listing } from '../../types/listing';
 
-export async function getStaticPaths() {
-  // RLS already restricts anon reads to approved listings; slug is only
-  // ever set once a listing has been geocoded (see ROB-40), so filtering
-  // on it here doubles as "has pSEO data ready."
-  const { data: listings, error } = await supabase
-    .from('listings')
-    .select('*')
-    .eq('status', 'approved')
-    .not('slug', 'is', null);
+// Rendered per-request rather than statically generated (ROB-72, ROB-73):
+// a static build only knows about listings/edits that existed at the
+// last deploy, so newly-seeded listings 404'd and admin edits to an
+// existing listing (e.g. its address) never showed up here until the
+// next redeploy. RLS already restricts anon reads to approved listings.
+export const prerender = false;
 
-  if (error) {
-    throw new Error(`Failed to load listings for /courts routes: ${error.message}`);
-  }
+const { slug } = Astro.params;
 
-  return ((listings ?? []) as Listing[]).map((listing) => ({
-    params: { slug: listing.slug },
-    props: { listing },
-  }));
+const { data, error } = await supabase
+  .from('listings')
+  .select('*')
+  .eq('status', 'approved')
+  .eq('slug', slug)
+  .maybeSingle();
+
+if (error || !data) {
+  return new Response('Listing not found', { status: 404 });
 }
 
-interface Props {
-  listing: Listing;
-}
+const listing = data as Listing;
 
-const { listing } = Astro.props;
 const { title, description } = buildCourtMetadata({
   type: listing.type,
   city: listing.city ?? '',
@@ -49,11 +46,9 @@ const { title, description } = buildCourtMetadata({
     </h1>
     {
       formatAddressDisplay(listing) && (
-        <p>
-          <a class="court-address" href={buildMapsHref(listing)} target="_blank" rel="noopener noreferrer">
-            {formatAddressDisplay(listing)}
-          </a>
-        </p>
+        <a class="court-address" href={buildMapsHref(listing)} target="_blank" rel="noopener noreferrer">
+          📍 {formatAddressDisplay(listing)}
+        </a>
       )
     }
     {listing.photo_url && <img class="court-photo" src={listing.photo_url} alt={listing.name ?? `${listing.type} volleyball court`} />}
@@ -141,9 +136,14 @@ const { title, description } = buildCourtMetadata({
   }
 
   .court-address {
+    display: inline-block;
+    margin: 0.5rem 0;
+    padding: 0.35rem 0.6rem;
     color: var(--color-accent);
     font-weight: 600;
     text-decoration: underline;
+    background: rgb(255 122 0 / 8%);
+    border-radius: 0.3rem;
   }
 
   .court-photo {
