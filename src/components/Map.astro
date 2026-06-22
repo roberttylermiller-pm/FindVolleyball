@@ -17,6 +17,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   /* Marker badge — emoji + dark circle, not an image asset (no broken-
      icon risk under a bundler), matches the dark/high-tech direction. */
   .volleyball-marker-badge {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -27,6 +28,24 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
     border: 2px solid white;
     border-radius: 50%;
     box-shadow: 0 2px 6px rgb(0 0 0 / 35%);
+  }
+
+  /* Surface badge (ROB-67) — small emoji pinned to the corner so the
+     marker reads as "volleyball, and here's the surface" at a glance. */
+  .volleyball-marker-type {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    font-size: 10px;
+    line-height: 1;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 40%);
   }
 
   /* Restyle marker clusters to match (default plugin styling is green/
@@ -262,7 +281,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
     for (const listing of allListings) {
       if (!listingMatchesFilters(listing, filters)) continue;
       const marker = L.marker([listing.lat, listing.lng], {
-        icon: createVolleyballIcon(),
+        icon: createVolleyballIcon(listing.type),
         opacity: listing.decayed ? 0.5 : 1,
       });
       marker.bindPopup(buildListingPopupContent(listing), { className: 'volleyball-popup', maxWidth: 260 });
