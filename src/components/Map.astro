@@ -95,6 +95,16 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
     border-radius: 0.25rem;
   }
 
+  .listing-popup .popup-decayed-notice {
+    margin-bottom: 0.4rem;
+    padding: 0.35rem 0.5rem;
+    color: #ffe9b3;
+    font-size: 0.75rem;
+    background: rgb(255 193 7 / 12%);
+    border-left: 2px solid #ffc107;
+    border-radius: 0.2rem;
+  }
+
   .listing-popup .popup-address {
     margin-bottom: 0.25rem;
     color: #ccc;
@@ -230,7 +240,13 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
     maxZoom: 19,
   }).addTo(map);
 
-  const clusterGroup = L.markerClusterGroup();
+  // Different orgs sometimes list meetups at the exact same gym/lat-lng.
+  // spiderfyOnMaxZoom (on by default, set explicitly here for clarity)
+  // is what makes that graceful: clicking a cluster whose members can't
+  // be separated by zooming any further fans them out into a small ring
+  // instead of just picking one to show, so every listing stays reachable
+  // — no de-dup or coordinate-nudging needed on our end.
+  const clusterGroup = L.markerClusterGroup({ spiderfyOnMaxZoom: true, zoomToBoundsOnClick: true });
   map.addLayer(clusterGroup);
 
   let allListings: Listing[] = [];

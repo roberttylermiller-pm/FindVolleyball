@@ -24,6 +24,11 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
       ${listing.decayed ? '<span class="popup-decayed">Decayed</span>' : ''}
     </div>
     ${
+      listing.decayed
+        ? '<div class="popup-decayed-notice">Not confirmed in over 60 days — it may no longer be happening. Vote below if you know it still is.</div>'
+        : ''
+    }
+    ${
       listing.address || listing.city
         ? `<div class="popup-address">${[listing.address, listing.neighborhood ?? listing.city].filter(Boolean).join(', ')}</div>`
         : ''
