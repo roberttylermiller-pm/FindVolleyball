@@ -14,7 +14,7 @@ Full product spec: [docs/PRD.md](docs/PRD.md). Decision history: [Linear Decisio
 | Map      | [Leaflet.js](https://leafletjs.com)                |
 | Styling  | CSS Modules with native nesting                    |
 | Database | [Supabase](https://supabase.com) (PostgreSQL + PostGIS) |
-| Auth     | Supabase Auth (Google, Apple, email/password)      |
+| Auth     | Supabase Auth (Google, email/password)      |
 
 ## Project Structure
 
