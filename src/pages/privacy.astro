@@ -1,0 +1,112 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Privacy Policy | FindVolleyball" description="What FindVolleyball collects, why, and how to ask us about it.">
+  <main class="privacy-page">
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: June 2026</p>
+
+    <p>
+      FindVolleyball is a small, free, community-run project — this policy is written in plain language because
+      that's what it actually is. If anything here is unclear, email
+      <a href="mailto:robert.tyler.miller@gmail.com">robert.tyler.miller@gmail.com</a> and ask.
+    </p>
+
+    <h2>What we collect</h2>
+    <p>
+      <strong>Account info:</strong> if you sign up, we store your email address (via email/password or Google
+      sign-in). We never see or store your password — that's handled entirely by our auth provider, Supabase.
+    </p>
+    <p>
+      <strong>Listings you submit:</strong> the details you enter on the submission form (location, schedule, cost,
+      skill level, contact link, optional photo, etc.) and which account submitted it.
+    </p>
+    <p>
+      <strong>Votes and reports:</strong> when you vote "still happening?" or report an issue on a listing, we
+      store that action and any note you write, tied to the listing — not to your identity beyond your account ID.
+    </p>
+
+    <h2>Why we collect it</h2>
+    <p>
+      To run the map: showing listings, letting you submit and manage your own, reviewing submissions before they
+      go public, and keeping listing data accurate over time via votes and reports. We don't use any of this for
+      advertising, and we don't sell or share it with data brokers.
+    </p>
+
+    <h2>Who else sees it</h2>
+    <p>
+      We rely on a small set of third-party services to run FindVolleyball, each only seeing what it needs to do
+      its job:
+    </p>
+    <ul>
+      <li><strong>Supabase</strong> — database, authentication, and photo storage.</li>
+      <li><strong>Vercel</strong> — hosting, plus privacy-friendly Web Analytics (page views only, no cookies, no cross-site tracking).</li>
+      <li><strong>Google</strong> — only if you choose "Sign in with Google" instead of email/password.</li>
+      <li><strong>OpenStreetMap / Nominatim</strong> — converts the address you submit into map coordinates. Only the address text is sent, not your account info.</li>
+    </ul>
+    <p>
+      If a listing's contact link points to Buy Me a Coffee, Meetup, or another external site, visiting it is
+      covered by that site's own privacy policy, not this one.
+    </p>
+
+    <h2>How long we keep it</h2>
+    <p>
+      Listing, vote, and report data stays as long as the listing does. If you want your account and associated
+      data deleted, email us and we'll take care of it.
+    </p>
+
+    <h2>Children</h2>
+    <p>FindVolleyball isn't directed at children under 13, and we don't knowingly collect data from them.</p>
+
+    <h2>Questions or requests</h2>
+    <p>
+      To access, correct, or delete your data, or if you have any other question about this policy, email
+      <a href="mailto:robert.tyler.miller@gmail.com">robert.tyler.miller@gmail.com</a>.
+    </p>
+  </main>
+</BaseLayout>
+
+<style>
+  .privacy-page {
+    width: 100%;
+    max-width: 32rem;
+    margin: 0 auto;
+    padding: 2rem 1rem 4rem;
+
+    h1 {
+      margin-bottom: 0.25rem;
+    }
+
+    .updated {
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    h2 {
+      margin-top: 1.75rem;
+      font-size: 1.1rem;
+    }
+
+    p,
+    li {
+      line-height: 1.6;
+      color: #333;
+    }
+
+    ul {
+      padding-left: 1.25rem;
+    }
+
+    li + li {
+      margin-top: 0.4rem;
+    }
+
+    a {
+      color: var(--color-accent);
+      font-weight: 600;
+    }
+  }
+</style>

@@ -9,6 +9,10 @@ import logo from '../assets/logo.png';
     <span class="brand-wordmark">FindVolleyball</span>
   </a>
   <div class="header-actions">
+    <nav class="nav-links">
+      <a href="/about">About</a>
+      <a href="/privacy">Privacy</a>
+    </nav>
     <a
       class="coffee-link"
       href="https://buymeacoffee.com/findvolleyball"
@@ -31,12 +35,29 @@ import logo from '../assets/logo.png';
   .site-header {
     display: flex;
     flex-shrink: 0;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     height: var(--header-height);
     padding: 0 1.5rem;
     background: white;
     border-bottom: 1px solid #e5e5e5;
+
+    /* On narrow phones the logo keeps its own row and everything else
+       (nav links, coffee, Add Listing, sign in/up) wraps to a second,
+       right-aligned row instead of overflowing past Sign in/Sign up. */
+    @media (max-width: 480px) {
+      height: auto;
+      padding: 0.6rem 1rem;
+      row-gap: 0.4rem;
+
+      .header-actions {
+        flex-basis: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 0.75rem;
+      }
+    }
 
     .brand {
       display: flex;
@@ -55,6 +76,22 @@ import logo from '../assets/logo.png';
       display: flex;
       align-items: center;
       gap: 1.25rem;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      font-size: 0.8rem;
+
+      a {
+        color: #666;
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
     }
 
     .coffee-link {
