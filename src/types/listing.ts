@@ -14,11 +14,14 @@ export interface DayTime {
 export interface Listing {
   id: string;
   type: ListingType;
-  cost: CostType;
+  // Null means "not specified" — some real-world listings genuinely
+  // don't have a known cost (e.g. a third-party rec center page that
+  // just doesn't say) rather than defaulting to a guess.
+  cost: CostType | null;
   lat: number;
   lng: number;
   days_times: DayTime[];
-  signup_required: boolean;
+  signup_required: boolean | null;
   name: string | null;
   external_link: string | null;
   min_skill_level: SkillLevel | null;

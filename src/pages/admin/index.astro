@@ -54,6 +54,7 @@ const DAYS: Array<{ value: string; label: string }> = [
 
         <fieldset>
           <legend>Cost</legend>
+          <label><input type="radio" name="cost" value="" /> Not specified</label>
           <label><input type="radio" name="cost" value="free" /> Free</label>
           <label><input type="radio" name="cost" value="paid" /> Paid</label>
         </fieldset>
@@ -121,6 +122,7 @@ const DAYS: Array<{ value: string; label: string }> = [
       <div class="field-row">
         <fieldset>
           <legend>Sign-up required</legend>
+          <label><input type="radio" name="signup_required" value="" /> Not specified</label>
           <label><input type="radio" name="signup_required" value="yes" /> Yes</label>
           <label><input type="radio" name="signup_required" value="no" /> No</label>
         </fieldset>
@@ -457,7 +459,7 @@ const DAYS: Array<{ value: string; label: string }> = [
       .map(
         (listing) => `
         <div class="listing-row" data-id="${listing.id}">
-          <div class="listing-info">${listing.name ?? `${listing.type} listing`} — ${listing.type}, ${listing.cost}</div>
+          <div class="listing-info">${listing.name ?? `${listing.type} listing`} — ${listing.type}, ${listing.cost ?? 'cost unknown'}</div>
           <div class="listing-actions">
             <button data-action="edit" data-id="${listing.id}">Edit</button>
             <button class="approve" data-action="approve" data-id="${listing.id}">Approve</button>
@@ -567,14 +569,14 @@ const DAYS: Array<{ value: string; label: string }> = [
 
     (editForm.elements.namedItem('name') as HTMLInputElement).value = listing.name ?? '';
     setRadioValue('type', listing.type);
-    setRadioValue('cost', listing.cost);
+    setRadioValue('cost', listing.cost ?? '');
     setRadioValue('visibility', listing.visibility);
     (editForm.elements.namedItem('lat') as HTMLInputElement).value = String(listing.lat);
     (editForm.elements.namedItem('lng') as HTMLInputElement).value = String(listing.lng);
     (editForm.elements.namedItem('address') as HTMLInputElement).value = listing.address ?? '';
     (editForm.elements.namedItem('city') as HTMLInputElement).value = listing.city ?? '';
     (editForm.elements.namedItem('neighborhood') as HTMLInputElement).value = listing.neighborhood ?? '';
-    setRadioValue('signup_required', listing.signup_required ? 'yes' : 'no');
+    setRadioValue('signup_required', listing.signup_required === null ? '' : listing.signup_required ? 'yes' : 'no');
     setRadioValue('equipment_supplied', listing.equipment_supplied === null ? '' : listing.equipment_supplied ? 'yes' : 'no');
     setRadioValue('team_required', listing.team_required === null ? '' : listing.team_required ? 'yes' : 'no');
     (editForm.elements.namedItem('min_skill_level') as HTMLSelectElement).value = listing.min_skill_level ?? '';
@@ -617,6 +619,8 @@ const DAYS: Array<{ value: string; label: string }> = [
     if (!editingId) return;
 
     const formData = new FormData(editForm);
+    const cost = formData.get('cost');
+    const signupRequired = formData.get('signup_required');
     const equipmentSupplied = formData.get('equipment_supplied');
     const teamRequired = formData.get('team_required');
     const days = formData.getAll('days') as string[];
@@ -630,7 +634,7 @@ const DAYS: Array<{ value: string; label: string }> = [
     const payload = {
       name: (formData.get('name') as string) || null,
       type: formData.get('type'),
-      cost: formData.get('cost'),
+      cost: cost === '' ? null : cost,
       visibility: formData.get('visibility'),
       lat: Number(formData.get('lat')),
       lng: Number(formData.get('lng')),
@@ -638,7 +642,7 @@ const DAYS: Array<{ value: string; label: string }> = [
       city: (formData.get('city') as string) || null,
       neighborhood: (formData.get('neighborhood') as string) || null,
       days_times: daysTimes,
-      signup_required: formData.get('signup_required') === 'yes',
+      signup_required: signupRequired === '' ? null : signupRequired === 'yes',
       equipment_supplied: equipmentSupplied === '' ? null : equipmentSupplied === 'yes',
       team_required: teamRequired === '' ? null : teamRequired === 'yes',
       min_skill_level: (formData.get('min_skill_level') as string) || null,

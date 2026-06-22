@@ -34,9 +34,9 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
         ? `<a class="popup-address" href="${buildMapsHref(listing)}" target="_blank" rel="noopener noreferrer">${formatAddressDisplay(listing)}</a>`
         : ''
     }
-    <div class="popup-meta">${capitalize(listing.type)} &middot; ${capitalize(listing.cost)} &middot; ${formatVisibilityLabel(listing.visibility)}</div>
+    <div class="popup-meta">${capitalize(listing.type)} &middot; ${listing.cost ? capitalize(listing.cost) : 'Cost unknown'} &middot; ${formatVisibilityLabel(listing.visibility)}</div>
     ${schedule ? `<div class="popup-row">When: ${schedule}</div>` : ''}
-    <div class="popup-row">Sign-up required: ${listing.signup_required ? 'Yes' : 'No'}</div>
+    <div class="popup-row">Sign-up required: ${listing.signup_required === null ? 'Not specified' : listing.signup_required ? 'Yes' : 'No'}</div>
     ${listing.min_skill_level ? `<div class="popup-row">Min skill: ${listing.min_skill_level}</div>` : ''}
     ${listing.equipment_supplied !== null ? `<div class="popup-row">Equipment supplied: ${listing.equipment_supplied ? 'Yes' : 'No'}</div>` : ''}
     ${listing.payment_types ? `<div class="popup-row">Payment: ${listing.payment_types}</div>` : ''}

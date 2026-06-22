@@ -61,7 +61,7 @@ const { title, description } = buildCourtMetadata({
       <dt>Surface</dt>
       <dd>{capitalize(listing.type)}</dd>
       <dt>Cost</dt>
-      <dd>{capitalize(listing.cost)}</dd>
+      <dd>{listing.cost ? capitalize(listing.cost) : 'Unknown'}</dd>
       <dt>Visibility</dt>
       <dd>{formatVisibilityLabel(listing.visibility)}</dd>
       {listing.days_times.length > 0 && (
@@ -71,7 +71,7 @@ const { title, description } = buildCourtMetadata({
         </>
       )}
       <dt>Sign-up required</dt>
-      <dd>{listing.signup_required ? 'Yes' : 'No'}</dd>
+      <dd>{listing.signup_required === null ? 'Not specified' : listing.signup_required ? 'Yes' : 'No'}</dd>
       {listing.min_skill_level && (
         <>
           <dt>Minimum skill level</dt>

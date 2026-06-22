@@ -15,8 +15,12 @@ export function defaultListingFilters(): ListingFilters {
 }
 
 export function listingMatchesFilters(
-  listing: { type: ListingType; cost: CostType },
+  listing: { type: ListingType; cost: CostType | null },
   filters: ListingFilters,
 ): boolean {
-  return filters.types.has(listing.type) && filters.costs.has(listing.cost);
+  // A listing with unknown cost shouldn't be hidden just because neither
+  // Free nor Paid is what it is — it's neither, so the filter shouldn't
+  // gate it at all.
+  const costMatches = listing.cost === null || filters.costs.has(listing.cost);
+  return filters.types.has(listing.type) && costMatches;
 }

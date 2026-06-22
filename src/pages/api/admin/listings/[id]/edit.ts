@@ -72,7 +72,7 @@ export const POST: APIRoute = async ({ request, params }) => {
         }
         break;
       case 'cost':
-        if (typeof value !== 'string' || !COST_TYPES.has(value)) {
+        if (value !== null && (typeof value !== 'string' || !COST_TYPES.has(value))) {
           return new Response(JSON.stringify({ error: `Invalid cost: ${value}` }), { status: 400 });
         }
         break;
@@ -98,7 +98,7 @@ export const POST: APIRoute = async ({ request, params }) => {
         }
         break;
       case 'signup_required':
-        if (typeof value !== 'boolean') {
+        if (value !== null && typeof value !== 'boolean') {
           return new Response(JSON.stringify({ error: 'Invalid signup_required' }), { status: 400 });
         }
         break;
