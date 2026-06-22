@@ -9,8 +9,11 @@ export function buildExternalLinkHref(value: string): string {
   return isEmailAddress(value) ? `mailto:${value}` : value;
 }
 
-// "View this meetup" doesn't make sense for a bare email contact — read
-// as "Contact" instead, since there's nothing to "view".
+// "View this meetup" doesn't make sense for a bare email contact. The
+// mailto: link only does anything if the user's OS has a default mail
+// client registered — many don't — so the label shows the actual
+// address rather than a generic "Contact" word, since that's the part
+// that's actually useful if the click does nothing.
 export function getExternalLinkLabel(value: string): string {
-  return isEmailAddress(value) ? 'Contact' : 'View this meetup';
+  return isEmailAddress(value) ? value : 'View this meetup';
 }
