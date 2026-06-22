@@ -1,5 +1,15 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const DAYS: Array<{ value: string; label: string }> = [
+  { value: 'sun', label: 'Sun' },
+  { value: 'mon', label: 'Mon' },
+  { value: 'tue', label: 'Tue' },
+  { value: 'wed', label: 'Wed' },
+  { value: 'thu', label: 'Thu' },
+  { value: 'fri', label: 'Fri' },
+  { value: 'sat', label: 'Sat' },
+];
 ---
 
 <BaseLayout title="Admin | FindVolleyball">
@@ -24,6 +34,152 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </section>
     </section>
   </main>
+
+  <dialog id="edit-dialog">
+    <form id="edit-form">
+      <h2>Edit listing</h2>
+
+      <label>
+        Name
+        <input type="text" name="name" />
+      </label>
+
+      <div class="field-row">
+        <fieldset>
+          <legend>Type</legend>
+          <label><input type="radio" name="type" value="indoor" /> Indoor</label>
+          <label><input type="radio" name="type" value="grass" /> Grass</label>
+          <label><input type="radio" name="type" value="beach" /> Beach</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Cost</legend>
+          <label><input type="radio" name="cost" value="free" /> Free</label>
+          <label><input type="radio" name="cost" value="paid" /> Paid</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Visibility</legend>
+          <label><input type="radio" name="visibility" value="public" /> Public</label>
+          <label><input type="radio" name="visibility" value="private" /> Private</label>
+        </fieldset>
+      </div>
+
+      <div class="field-row">
+        <label>
+          Latitude
+          <input type="number" name="lat" step="any" required />
+        </label>
+        <label>
+          Longitude
+          <input type="number" name="lng" step="any" required />
+        </label>
+      </div>
+
+      <label>
+        Street address
+        <input type="text" name="address" />
+      </label>
+
+      <div class="field-row">
+        <label>
+          City
+          <input type="text" name="city" />
+        </label>
+        <label>
+          Neighborhood
+          <input type="text" name="neighborhood" />
+        </label>
+      </div>
+
+      <fieldset class="day-time-edit">
+        <legend>Days & Times</legend>
+        <div class="day-chips">
+          {
+            DAYS.map(({ value, label }) => (
+              <label class="day-chip">
+                <input type="checkbox" name="days" value={value} data-day={value} />
+                <span>{label}</span>
+              </label>
+            ))
+          }
+        </div>
+        <div class="day-time-rows">
+          {
+            DAYS.map(({ value, label }) => (
+              <div class="day-time-row" data-day-row={value} hidden>
+                <span class="day-time-row-label">{label}</span>
+                <input type="time" name={`start_${value}`} aria-label={`${label} start time`} />
+                <span>to</span>
+                <input type="time" name={`end_${value}`} aria-label={`${label} end time`} />
+              </div>
+            ))
+          }
+        </div>
+      </fieldset>
+
+      <div class="field-row">
+        <fieldset>
+          <legend>Sign-up required</legend>
+          <label><input type="radio" name="signup_required" value="yes" /> Yes</label>
+          <label><input type="radio" name="signup_required" value="no" /> No</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Equipment supplied</legend>
+          <label><input type="radio" name="equipment_supplied" value="" /> Not specified</label>
+          <label><input type="radio" name="equipment_supplied" value="yes" /> Yes</label>
+          <label><input type="radio" name="equipment_supplied" value="no" /> No</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Team required</legend>
+          <label><input type="radio" name="team_required" value="" /> Not specified</label>
+          <label><input type="radio" name="team_required" value="yes" /> Yes</label>
+          <label><input type="radio" name="team_required" value="no" /> No</label>
+        </fieldset>
+      </div>
+
+      <label>
+        Minimum skill level
+        <select name="min_skill_level">
+          <option value="">No minimum</option>
+          <option value="C">C</option>
+          <option value="B">B</option>
+          <option value="BB">BB</option>
+          <option value="A">A</option>
+          <option value="AA">AA</option>
+        </select>
+      </label>
+
+      <label>
+        Meetup link or contact email
+        <input type="text" name="external_link" />
+      </label>
+
+      <label>
+        Payment types
+        <input type="text" name="payment_types" />
+      </label>
+
+      <label>
+        Photo URL
+        <input type="text" name="photo_url" />
+      </label>
+
+      <label>
+        Notes
+        <textarea name="notes" maxlength="250"></textarea>
+      </label>
+
+      <p class="edit-message" id="edit-message" role="status"></p>
+
+      <div class="edit-actions">
+        <button type="button" id="edit-cancel">Cancel</button>
+        <button type="submit">Save changes</button>
+      </div>
+    </form>
+  </dialog>
 </BaseLayout>
 
 <style>
@@ -59,6 +215,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
       .listing-actions {
         display: flex;
+        flex-wrap: wrap;
         gap: 0.5rem;
 
         button {
@@ -91,8 +248,168 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
 </style>
 
+<style>
+  #edit-dialog {
+    width: min(36rem, calc(100vw - 2rem));
+    max-height: calc(100vh - 4rem);
+    padding: 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 25%);
+
+    &::backdrop {
+      background: rgb(0 0 0 / 40%);
+    }
+
+    h2 {
+      margin: 0 0 1rem;
+      font-size: 1.1rem;
+    }
+  }
+
+  #edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    font-size: 0.875rem;
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      flex: 1;
+    }
+
+    .field-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    fieldset {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      padding: 0;
+      border: none;
+
+      legend {
+        margin-bottom: 0.15rem;
+        font-weight: 600;
+      }
+
+      label {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.4rem;
+        font-weight: 400;
+      }
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      padding: 0.4rem;
+      font-family: inherit;
+      font-size: 0.875rem;
+      border: 1px solid #ccc;
+      border-radius: 0.25rem;
+    }
+
+    .day-time-edit {
+      .day-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .day-chip {
+        position: relative;
+        flex: initial;
+
+        input {
+          position: absolute;
+          opacity: 0;
+          width: 100%;
+          height: 100%;
+          margin: 0;
+          cursor: pointer;
+        }
+
+        span {
+          display: block;
+          padding: 0.3rem 0.6rem;
+          font-size: 0.8rem;
+          font-weight: 600;
+          background: white;
+          border: 1px solid #ccc;
+          border-radius: 999px;
+          user-select: none;
+        }
+
+        input:checked + span {
+          color: white;
+          background: var(--color-accent);
+          border-color: var(--color-accent);
+        }
+      }
+
+      .day-time-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        margin-top: 0.5rem;
+      }
+
+      .day-time-row:not([hidden]) {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+
+        .day-time-row-label {
+          width: 2.5rem;
+          font-weight: 600;
+        }
+
+        input[type="time"] {
+          padding: 0.2rem;
+        }
+      }
+    }
+
+    .edit-message {
+      margin: 0;
+      min-height: 1rem;
+      color: #c0392b;
+    }
+
+    .edit-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+
+      button {
+        padding: 0.45rem 1rem;
+        font-size: 0.875rem;
+        border: 1px solid #ccc;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        background: white;
+      }
+
+      button[type="submit"] {
+        color: white;
+        background: var(--color-accent);
+        border-color: var(--color-accent);
+      }
+    }
+  }
+</style>
+
 <script>
   import { supabase } from '../../lib/supabase/client';
+  import type { DayTime, Listing as FullListing } from '../../types/listing';
 
   const statusMessage = document.querySelector<HTMLParagraphElement>('#status-message');
   const content = document.querySelector<HTMLElement>('#admin-content');
@@ -100,21 +417,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   const reportsList = document.querySelector<HTMLDivElement>('#reports-list');
   const allListingsList = document.querySelector<HTMLDivElement>('#all-listings-list');
 
-  interface Listing {
-    id: string;
-    name: string | null;
-    type: string;
-    cost: string;
-    status: string;
-    decayed: boolean;
-  }
-
   interface Report {
     id: string;
     note: string;
     created_at: string;
     listings: { name: string | null; type: string; status: string } | null;
   }
+
+  // Looked up by id when "Edit" is clicked — both dashboard sections
+  // already fetch full rows (select('*')), so no extra request needed.
+  const listingsById = new Map<string, FullListing>();
 
   async function getAccessToken(): Promise<string | null> {
     const { data } = await supabase.auth.getSession();
@@ -134,7 +446,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     return response;
   }
 
-  function renderPending(listings: Listing[]) {
+  function renderPending(listings: FullListing[]) {
     if (!pendingList) return;
     if (listings.length === 0) {
       pendingList.innerHTML = '<p class="empty-state">Nothing pending review.</p>';
@@ -147,6 +459,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <div class="listing-row" data-id="${listing.id}">
           <div class="listing-info">${listing.name ?? `${listing.type} listing`} — ${listing.type}, ${listing.cost}</div>
           <div class="listing-actions">
+            <button data-action="edit" data-id="${listing.id}">Edit</button>
             <button class="approve" data-action="approve" data-id="${listing.id}">Approve</button>
             <button class="reject" data-action="reject" data-id="${listing.id}">Reject</button>
           </div>
@@ -175,7 +488,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       .join('');
   }
 
-  function renderAllListings(listings: Listing[]) {
+  function renderAllListings(listings: FullListing[]) {
     if (!allListingsList) return;
     if (listings.length === 0) {
       allListingsList.innerHTML = '<p class="empty-state">No listings yet.</p>';
@@ -190,6 +503,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             ${listing.name ?? `${listing.type} listing`} — ${listing.status}${listing.decayed ? ' · decayed' : ''}
           </div>
           <div class="listing-actions">
+            <button data-action="edit" data-id="${listing.id}">Edit</button>
             <button data-action="toggle-decayed" data-id="${listing.id}" data-decayed="${listing.decayed}">
               ${listing.decayed ? 'Clear decayed' : 'Mark decayed'}
             </button>
@@ -223,9 +537,136 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     if (content) content.hidden = false;
     if (statusMessage) statusMessage.textContent = '';
 
+    listingsById.clear();
+    for (const listing of [...(pending ?? []), ...(all ?? [])]) {
+      listingsById.set(listing.id, listing);
+    }
+
     renderPending(pending ?? []);
     renderReports(reports ?? []);
     renderAllListings(all ?? []);
+  }
+
+  // --- Edit dialog ---
+
+  const editDialog = document.querySelector<HTMLDialogElement>('#edit-dialog');
+  const editForm = document.querySelector<HTMLFormElement>('#edit-form');
+  const editMessage = document.querySelector<HTMLParagraphElement>('#edit-message');
+  let editingId: string | null = null;
+
+  function setRadioValue(name: string, value: string) {
+    const input = editForm?.querySelector<HTMLInputElement>(`input[name="${name}"][value="${value}"]`);
+    if (input) input.checked = true;
+  }
+
+  function openEditDialog(listing: FullListing) {
+    if (!editForm || !editDialog) return;
+    editForm.reset();
+    if (editMessage) editMessage.textContent = '';
+    editingId = listing.id;
+
+    (editForm.elements.namedItem('name') as HTMLInputElement).value = listing.name ?? '';
+    setRadioValue('type', listing.type);
+    setRadioValue('cost', listing.cost);
+    setRadioValue('visibility', listing.visibility);
+    (editForm.elements.namedItem('lat') as HTMLInputElement).value = String(listing.lat);
+    (editForm.elements.namedItem('lng') as HTMLInputElement).value = String(listing.lng);
+    (editForm.elements.namedItem('address') as HTMLInputElement).value = listing.address ?? '';
+    (editForm.elements.namedItem('city') as HTMLInputElement).value = listing.city ?? '';
+    (editForm.elements.namedItem('neighborhood') as HTMLInputElement).value = listing.neighborhood ?? '';
+    setRadioValue('signup_required', listing.signup_required ? 'yes' : 'no');
+    setRadioValue('equipment_supplied', listing.equipment_supplied === null ? '' : listing.equipment_supplied ? 'yes' : 'no');
+    setRadioValue('team_required', listing.team_required === null ? '' : listing.team_required ? 'yes' : 'no');
+    (editForm.elements.namedItem('min_skill_level') as HTMLSelectElement).value = listing.min_skill_level ?? '';
+    (editForm.elements.namedItem('external_link') as HTMLInputElement).value = listing.external_link ?? '';
+    (editForm.elements.namedItem('payment_types') as HTMLInputElement).value = listing.payment_types ?? '';
+    (editForm.elements.namedItem('photo_url') as HTMLInputElement).value = listing.photo_url ?? '';
+    (editForm.elements.namedItem('notes') as HTMLTextAreaElement).value = listing.notes ?? '';
+
+    for (const dayTime of listing.days_times) {
+      const checkbox = editForm.querySelector<HTMLInputElement>(`input[data-day="${dayTime.day}"]`);
+      const row = editForm.querySelector<HTMLDivElement>(`[data-day-row="${dayTime.day}"]`);
+      if (checkbox) checkbox.checked = true;
+      if (row) row.hidden = false;
+      const startInput = editForm.elements.namedItem(`start_${dayTime.day}`) as HTMLInputElement | null;
+      const endInput = editForm.elements.namedItem(`end_${dayTime.day}`) as HTMLInputElement | null;
+      if (startInput) startInput.value = dayTime.start_time ?? '';
+      if (endInput) endInput.value = dayTime.end_time ?? '';
+    }
+
+    editDialog.showModal();
+  }
+
+  for (const checkbox of editForm?.querySelectorAll<HTMLInputElement>('.day-chip input[type="checkbox"]') ?? []) {
+    const row = editForm?.querySelector<HTMLDivElement>(`[data-day-row="${checkbox.dataset.day}"]`);
+    checkbox.addEventListener('change', () => {
+      if (!row) return;
+      row.hidden = !checkbox.checked;
+      if (!checkbox.checked) {
+        for (const timeInput of row.querySelectorAll<HTMLInputElement>('input[type="time"]')) {
+          timeInput.value = '';
+        }
+      }
+    });
+  }
+
+  document.querySelector('#edit-cancel')?.addEventListener('click', () => editDialog?.close());
+
+  editForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!editingId) return;
+
+    const formData = new FormData(editForm);
+    const equipmentSupplied = formData.get('equipment_supplied');
+    const teamRequired = formData.get('team_required');
+    const days = formData.getAll('days') as string[];
+
+    const daysTimes: DayTime[] = days.map((day) => ({
+      day: day as DayTime['day'],
+      start_time: (formData.get(`start_${day}`) as string) || null,
+      end_time: (formData.get(`end_${day}`) as string) || null,
+    }));
+
+    const payload = {
+      name: (formData.get('name') as string) || null,
+      type: formData.get('type'),
+      cost: formData.get('cost'),
+      visibility: formData.get('visibility'),
+      lat: Number(formData.get('lat')),
+      lng: Number(formData.get('lng')),
+      address: (formData.get('address') as string) || null,
+      city: (formData.get('city') as string) || null,
+      neighborhood: (formData.get('neighborhood') as string) || null,
+      days_times: daysTimes,
+      signup_required: formData.get('signup_required') === 'yes',
+      equipment_supplied: equipmentSupplied === '' ? null : equipmentSupplied === 'yes',
+      team_required: teamRequired === '' ? null : teamRequired === 'yes',
+      min_skill_level: (formData.get('min_skill_level') as string) || null,
+      external_link: (formData.get('external_link') as string) || null,
+      payment_types: (formData.get('payment_types') as string) || null,
+      photo_url: (formData.get('photo_url') as string) || null,
+      notes: (formData.get('notes') as string) || null,
+    };
+
+    const response = await apiFetch(`/api/admin/listings/${editingId}/edit`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const { error } = await response.json().catch(() => ({ error: 'Save failed' }));
+      if (editMessage) editMessage.textContent = error ?? 'Save failed';
+      return;
+    }
+
+    editDialog?.close();
+    loadDashboard();
+  });
+
+  function handleEditClick(id: string | undefined) {
+    if (!id) return;
+    const listing = listingsById.get(id);
+    if (listing) openEditDialog(listing);
   }
 
   pendingList?.addEventListener('click', async (event) => {
@@ -233,6 +674,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     if (!button) return;
 
     const { action, id } = button.dataset;
+    if (action === 'edit') {
+      handleEditClick(id);
+      return;
+    }
     await apiFetch(`/api/admin/listings/${id}/${action}`, { method: 'POST' });
     loadDashboard();
   });
@@ -243,7 +688,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     const { action, id, decayed } = button.dataset;
 
-    if (action === 'toggle-decayed') {
+    if (action === 'edit') {
+      handleEditClick(id);
+      return;
+    } else if (action === 'toggle-decayed') {
       await apiFetch(`/api/admin/listings/${id}/override`, {
         method: 'POST',
         body: JSON.stringify({ decayed: decayed !== 'true' }),
