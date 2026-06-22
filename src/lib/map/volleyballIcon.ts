@@ -17,8 +17,8 @@ export function createVolleyballIcon(type: ListingType): L.DivIcon {
   return L.divIcon({
     className: 'volleyball-marker',
     html: `<div class="volleyball-marker-badge">🏐<span class="volleyball-marker-type">${TYPE_BADGES[type]}</span></div>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-    popupAnchor: [0, -15],
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
+    popupAnchor: [0, -19],
   });
 }
