@@ -139,11 +139,15 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       }
     }
 
-    label:not([hidden]) {
+    label {
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
       font-size: 0.875rem;
+    }
+
+    #payment-types-field[hidden] {
+      display: none;
     }
 
     .field-hint {
