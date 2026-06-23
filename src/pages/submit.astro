@@ -18,8 +18,9 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       </fieldset>
 
       <fieldset>
-        <legend>Cost *</legend>
-        <label><input type="radio" name="cost" value="free" required /> Free</label>
+        <legend>Cost</legend>
+        <label><input type="radio" name="cost" value="" checked /> Not specified</label>
+        <label><input type="radio" name="cost" value="free" /> Free</label>
         <label><input type="radio" name="cost" value="paid" /> Paid</label>
       </fieldset>
 
@@ -28,8 +29,9 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       <DayTimePicker />
 
       <fieldset>
-        <legend>Sign-ups required in advance? *</legend>
-        <label><input type="radio" name="signup_required" value="yes" required /> Yes</label>
+        <legend>Sign-ups required in advance?</legend>
+        <label><input type="radio" name="signup_required" value="" checked /> Not specified</label>
+        <label><input type="radio" name="signup_required" value="yes" /> Yes</label>
         <label><input type="radio" name="signup_required" value="no" /> No</label>
       </fieldset>
 
@@ -198,6 +200,8 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     if (!currentUserId) return;
 
     const formData = new FormData(form);
+    const cost = formData.get('cost');
+    const signupRequired = formData.get('signup_required');
     const equipmentSupplied = formData.get('equipment_supplied');
     const teamRequired = formData.get('team_required');
 
@@ -214,11 +218,11 @@ import DayTimePicker from '../components/DayTimePicker.astro';
 
     const payload: NewListing = {
       type: formData.get('type') as NewListing['type'],
-      cost: formData.get('cost') as NewListing['cost'],
+      cost: cost === '' ? null : (cost as NewListing['cost']),
       lat: Number(formData.get('lat')),
       lng: Number(formData.get('lng')),
       days_times: readDaysTimes(formData),
-      signup_required: formData.get('signup_required') === 'yes',
+      signup_required: signupRequired === '' ? null : signupRequired === 'yes',
       name: (formData.get('name') as string) || null,
       external_link: (formData.get('external_link') as string) || null,
       min_skill_level: (formData.get('min_skill_level') as NewListing['min_skill_level']) || null,

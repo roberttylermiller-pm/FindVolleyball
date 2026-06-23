@@ -25,7 +25,7 @@ async function fetchCourtPageUrls() {
     );
     if (!response.ok) return [];
     const rows = await response.json();
-    return rows.map((row) => `https://findvolleyball.app/courts/${row.slug}/`);
+    return rows.map((/** @type {{ slug: string }} */ row) => `https://findvolleyball.app/courts/${row.slug}/`);
   } catch {
     return [];
   }
