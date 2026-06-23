@@ -29,7 +29,18 @@ const DAYS: Array<{ value: string; label: string }> = [
       </section>
 
       <section>
-        <h2>All listings</h2>
+        <div class="section-header">
+          <h2>All listings</h2>
+          <label class="sort-label">
+            Sort by
+            <select id="all-listings-sort">
+              <option value="date-desc">Date added (newest first)</option>
+              <option value="date-asc">Date added (oldest first)</option>
+              <option value="alpha">Alphabetical</option>
+              <option value="upvoted">Last upvoted</option>
+            </select>
+          </label>
+        </div>
         <div id="all-listings-list"></div>
       </section>
     </section>
@@ -197,6 +208,29 @@ const DAYS: Array<{ value: string; label: string }> = [
 
     h2 {
       font-size: 1.1rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .sort-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: #666;
+
+      select {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.8rem;
+        border: 1px solid #ccc;
+        border-radius: 0.25rem;
+      }
     }
 
     .listing-row {
@@ -430,6 +464,35 @@ const DAYS: Array<{ value: string; label: string }> = [
   // already fetch full rows (select('*')), so no extra request needed.
   const listingsById = new Map<string, FullListing>();
 
+  // Cached so the sort dropdown can re-render client-side instead of
+  // re-fetching — the full list is already in memory either way.
+  let allListingsCache: FullListing[] = [];
+  const allListingsSort = document.querySelector<HTMLSelectElement>('#all-listings-sort');
+
+  function sortListings(listings: FullListing[], sortBy: string): FullListing[] {
+    const sorted = [...listings];
+    switch (sortBy) {
+      case 'alpha':
+        return sorted.sort((a, b) =>
+          (a.name ?? `${a.type} listing`).localeCompare(b.name ?? `${b.type} listing`),
+        );
+      case 'date-asc':
+        return sorted.sort((a, b) => a.created_at.localeCompare(b.created_at));
+      case 'upvoted':
+        // Never-upvoted listings sort to the end rather than the front,
+        // since "no last_upvote_at" isn't the same as "upvoted long ago".
+        return sorted.sort((a, b) => {
+          if (!a.last_upvote_at && !b.last_upvote_at) return 0;
+          if (!a.last_upvote_at) return 1;
+          if (!b.last_upvote_at) return -1;
+          return b.last_upvote_at.localeCompare(a.last_upvote_at);
+        });
+      case 'date-desc':
+      default:
+        return sorted.sort((a, b) => b.created_at.localeCompare(a.created_at));
+    }
+  }
+
   async function getAccessToken(): Promise<string | null> {
     const { data } = await supabase.auth.getSession();
     return data.session?.access_token ?? null;
@@ -480,10 +543,13 @@ const DAYS: Array<{ value: string; label: string }> = [
     reportsList.innerHTML = reports
       .map(
         (report) => `
-        <div class="listing-row">
+        <div class="listing-row" data-id="${report.id}">
           <div class="listing-info">
             <strong>${report.listings?.name ?? 'Unknown listing'}</strong> (${report.listings?.status ?? 'unknown'})<br>
             ${report.note}
+          </div>
+          <div class="listing-actions">
+            <button data-action="archive-report" data-id="${report.id}">Archive</button>
           </div>
         </div>`,
       )
@@ -544,10 +610,16 @@ const DAYS: Array<{ value: string; label: string }> = [
       listingsById.set(listing.id, listing);
     }
 
+    allListingsCache = all ?? [];
+
     renderPending(pending ?? []);
     renderReports(reports ?? []);
-    renderAllListings(all ?? []);
+    renderAllListings(sortListings(allListingsCache, allListingsSort?.value ?? 'date-desc'));
   }
+
+  allListingsSort?.addEventListener('change', () => {
+    renderAllListings(sortListings(allListingsCache, allListingsSort.value));
+  });
 
   // --- Edit dialog ---
 
@@ -683,6 +755,14 @@ const DAYS: Array<{ value: string; label: string }> = [
       return;
     }
     await apiFetch(`/api/admin/listings/${id}/${action}`, { method: 'POST' });
+    loadDashboard();
+  });
+
+  reportsList?.addEventListener('click', async (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action="archive-report"]');
+    if (!button) return;
+
+    await apiFetch(`/api/admin/reports/${button.dataset.id}/archive`, { method: 'POST' });
     loadDashboard();
   });
 
