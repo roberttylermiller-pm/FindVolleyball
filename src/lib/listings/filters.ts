@@ -20,10 +20,11 @@ export function listingMatchesFilters(
   listing: { type: ListingType; cost: CostType | null; days_times: DayTime[] },
   filters: ListingFilters,
 ): boolean {
-  // A listing with unknown cost shouldn't be hidden just because neither
-  // Free nor Paid is what it is — it's neither, so the filter shouldn't
-  // gate it at all.
-  const costMatches = listing.cost === null || filters.costs.has(listing.cost);
+  // Unknown cost is treated as Free for filtering purposes (ROB-87) —
+  // most "cost unknown" listings turn out to be free community/rec
+  // center sessions, so this errs toward showing them rather than
+  // hiding them when someone's specifically looking for free play.
+  const costMatches = filters.costs.has(listing.cost ?? 'free');
   // Same idea for days: a listing with no schedule entered at all isn't
   // "wrong" for any day filter — only hide it if it HAS days and none of
   // them are selected.
