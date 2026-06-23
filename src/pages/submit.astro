@@ -24,6 +24,11 @@ import DayTimePicker from '../components/DayTimePicker.astro';
         <label><input type="radio" name="cost" value="paid" /> Paid</label>
       </fieldset>
 
+      <label id="payment-types-field" hidden>
+        Cost amount / payment method
+        <input type="text" name="payment_types" maxlength="100" placeholder="e.g. &quot;$10 cash only&quot; or &quot;$5/session via Venmo&quot;" />
+      </label>
+
       <LocationPicker />
 
       <DayTimePicker />
@@ -66,11 +71,6 @@ import DayTimePicker from '../components/DayTimePicker.astro';
         <label><input type="radio" name="equipment_supplied" value="yes" /> Yes</label>
         <label><input type="radio" name="equipment_supplied" value="no" /> No</label>
       </fieldset>
-
-      <label>
-        Payment types (optional, e.g. "Cash only" or "Venmo")
-        <input type="text" name="payment_types" maxlength="100" />
-      </label>
 
       <fieldset>
         <legend>Team required on signup? (optional)</legend>
@@ -139,7 +139,7 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       }
     }
 
-    label {
+    label:not([hidden]) {
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
@@ -184,6 +184,18 @@ import DayTimePicker from '../components/DayTimePicker.astro';
   const form = document.querySelector<HTMLFormElement>('#submit-form');
   const message = document.querySelector<HTMLParagraphElement>('#submit-message');
   const authNotice = document.querySelector<HTMLParagraphElement>('#auth-notice');
+
+  // Cost amount only makes sense once "Paid" is picked — keeps it out
+  // of the way otherwise instead of looking like an unrelated field.
+  const paymentTypesField = document.querySelector<HTMLLabelElement>('#payment-types-field');
+  const paymentTypesInput = paymentTypesField?.querySelector<HTMLInputElement>('input[name="payment_types"]');
+  for (const costRadio of document.querySelectorAll<HTMLInputElement>('input[name="cost"]')) {
+    costRadio.addEventListener('change', () => {
+      if (!paymentTypesField) return;
+      paymentTypesField.hidden = costRadio.value !== 'paid' || !costRadio.checked;
+      if (paymentTypesField.hidden && paymentTypesInput) paymentTypesInput.value = '';
+    });
+  }
 
   let currentUserId: string | null = null;
 
@@ -244,5 +256,6 @@ import DayTimePicker from '../components/DayTimePicker.astro';
 
     if (message) message.textContent = 'Submitted! Your listing is pending review.';
     form.reset();
+    if (paymentTypesField) paymentTypesField.hidden = true;
   });
 </script>
