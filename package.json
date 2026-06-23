@@ -12,6 +12,7 @@
     "astro": "astro",
     "seed": "tsx scripts/seed.ts",
     "seed-more": "tsx scripts/seed-more-listings.ts",
+    "seed-sd-oc": "tsx scripts/seed-sd-and-oc-listings.ts",
     "backfill-pseo": "tsx scripts/backfill-pseo-fields.ts"
   },
   "dependencies": {
