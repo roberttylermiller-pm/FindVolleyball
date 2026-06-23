@@ -116,6 +116,10 @@ const { title, description } = buildCourtMetadata({
     <section class="report-section">
       <button type="button" id="report-toggle">Report an issue with this listing</button>
       <form id="report-form" hidden>
+        <label class="honeypot-field" aria-hidden="true">
+          Website
+          <input type="text" name="website" tabindex="-1" autocomplete="off" />
+        </label>
         <label>
           What's wrong? (250 char max)
           <textarea name="note" maxlength="250" required></textarea>
@@ -219,6 +223,14 @@ const { title, description } = buildCourtMetadata({
     }
   }
 
+  .honeypot-field {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    left: -9999px;
+  }
+
   #report-toggle {
     padding: 0;
     font-size: 0.875rem;
@@ -258,8 +270,6 @@ const { title, description } = buildCourtMetadata({
 </style>
 
 <script>
-  import { supabase } from '../../lib/supabase/client';
-
   const main = document.querySelector<HTMLElement>('.court-page');
   const listingId = main?.dataset.listingId;
 
@@ -272,10 +282,14 @@ const { title, description } = buildCourtMetadata({
     voteUp?.setAttribute('disabled', 'true');
     voteDown?.setAttribute('disabled', 'true');
 
-    const { error } = await supabase.from('votes').insert({ listing_id: listingId, vote_type: voteType });
+    const response = await fetch('/api/votes', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ listing_id: listingId, vote_type: voteType }),
+    });
 
     if (voteMessage) {
-      voteMessage.textContent = error ? 'Something went wrong — please try again.' : 'Thanks for the update!';
+      voteMessage.textContent = response.ok ? 'Thanks for the update!' : 'Something went wrong — please try again.';
     }
   }
 
@@ -296,17 +310,22 @@ const { title, description } = buildCourtMetadata({
 
     const formData = new FormData(reportForm);
     const note = String(formData.get('note') ?? '').trim();
+    const website = String(formData.get('website') ?? '');
     if (!note) return;
 
-    const { error } = await supabase.from('reports').insert({ listing_id: listingId, note });
+    const response = await fetch('/api/reports', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ listing_id: listingId, note, website }),
+    });
 
     if (reportMessage) {
-      reportMessage.textContent = error
-        ? 'Something went wrong — please try again.'
-        : "Thanks — we'll take a look.";
+      reportMessage.textContent = response.ok
+        ? "Thanks — we'll take a look."
+        : 'Something went wrong — please try again.';
     }
 
-    if (!error) {
+    if (response.ok) {
       reportForm.reset();
       reportForm.hidden = true;
     }

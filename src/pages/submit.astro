@@ -10,6 +10,11 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     <p id="auth-notice" hidden>You need to <a href="/login">sign in</a> to submit a listing.</p>
 
     <form id="submit-form" hidden>
+      <label class="honeypot-field" aria-hidden="true">
+        Website
+        <input type="text" name="website" tabindex="-1" autocomplete="off" />
+      </label>
+
       <fieldset>
         <legend>Type *</legend>
         <label><input type="radio" name="type" value="indoor" required /> Indoor</label>
@@ -150,6 +155,17 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       display: none;
     }
 
+    /* Honeypot — present in the DOM (some bots skip the [hidden]
+       attribute specifically) but invisible and unreachable for a real
+       user: off-screen, untabbable, not announced to screen readers. */
+    .honeypot-field {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      left: -9999px;
+    }
+
     .field-hint {
       font-size: 0.75rem;
       font-weight: 400;
@@ -232,7 +248,8 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       photoUrl = result.url;
     }
 
-    const payload: NewListing = {
+    const payload = {
+      website: (formData.get('website') as string) || '',
       type: formData.get('type') as NewListing['type'],
       cost: cost === '' ? null : (cost as NewListing['cost']),
       lat: Number(formData.get('lat')),
@@ -248,13 +265,20 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       notes: (formData.get('notes') as string) || null,
       visibility: formData.get('visibility') as NewListing['visibility'],
       photo_url: photoUrl,
-      submitted_by: currentUserId,
     };
 
-    const { error } = await supabase.from('listings').insert(payload);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
 
-    if (error) {
-      if (message) message.textContent = error.message;
+    const response = await fetch('/api/listings/submit', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const { error } = await response.json().catch(() => ({ error: 'Submission failed' }));
+      if (message) message.textContent = error ?? 'Submission failed';
       return;
     }
 

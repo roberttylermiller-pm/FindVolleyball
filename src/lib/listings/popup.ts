@@ -1,4 +1,3 @@
-import { supabase } from '../supabase/client';
 import { formatDayTime } from './formatDayTime';
 import { capitalize } from '../text';
 import { formatVisibilityLabel } from './visibility';
@@ -55,6 +54,10 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
     </div>
     <button type="button" class="popup-report-toggle">Report an issue</button>
     <form class="popup-report-form" hidden>
+      <label class="popup-honeypot" aria-hidden="true">
+        Website
+        <input type="text" name="website" tabindex="-1" autocomplete="off" />
+      </label>
       <textarea name="note" maxlength="250" required placeholder="What's wrong? (250 char max)"></textarea>
       <button type="submit">Submit</button>
     </form>
@@ -70,10 +73,14 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
     voteUp?.setAttribute('disabled', 'true');
     voteDown?.setAttribute('disabled', 'true');
 
-    const { error } = await supabase.from('votes').insert({ listing_id: listing.id, vote_type: voteType });
+    const response = await fetch('/api/votes', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ listing_id: listing.id, vote_type: voteType }),
+    });
 
     if (voteMessage) {
-      voteMessage.textContent = error ? 'Something went wrong.' : 'Thanks!';
+      voteMessage.textContent = response.ok ? 'Thanks!' : 'Something went wrong.';
     }
   }
 
@@ -92,15 +99,20 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
     event.preventDefault();
     const formData = new FormData(reportForm);
     const note = String(formData.get('note') ?? '').trim();
+    const website = String(formData.get('website') ?? '');
     if (!note) return;
 
-    const { error } = await supabase.from('reports').insert({ listing_id: listing.id, note });
+    const response = await fetch('/api/reports', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ listing_id: listing.id, note, website }),
+    });
 
     if (reportMessage) {
-      reportMessage.textContent = error ? 'Something went wrong.' : "Thanks — we'll take a look.";
+      reportMessage.textContent = response.ok ? "Thanks — we'll take a look." : 'Something went wrong.';
     }
 
-    if (!error) {
+    if (response.ok) {
       reportForm.reset();
       reportForm.hidden = true;
     }

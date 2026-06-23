@@ -209,6 +209,17 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
     margin-top: 0.4rem;
   }
 
+  /* Honeypot — present in the DOM but invisible/unreachable for a real
+     user. Doesn't use [hidden] since some bots specifically skip
+     hidden-attribute fields; off-screen positioning catches those too. */
+  .listing-popup .popup-honeypot {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    left: -9999px;
+  }
+
   .listing-popup .popup-report-form textarea {
     padding: 0.4rem;
     font-family: inherit;

@@ -1,0 +1,120 @@
+import type { APIRoute } from 'astro';
+import { requireUser } from '../../../lib/auth/requireUser';
+import { supabaseAdmin } from '../../../lib/supabase/server';
+import { checkRateLimit, getClientIp } from '../../../lib/rateLimit';
+import type { DayTime } from '../../../types/listing';
+
+export const prerender = false;
+
+const LISTING_TYPES = new Set(['indoor', 'grass', 'beach']);
+const COST_TYPES = new Set(['free', 'paid']);
+const VISIBILITIES = new Set(['public', 'private']);
+const SKILL_LEVELS = new Set(['C', 'B', 'BB', 'A', 'AA']);
+const DAYS = new Set(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']);
+
+function isValidDaysTimes(value: unknown): value is DayTime[] {
+  if (!Array.isArray(value)) return false;
+  return value.every(
+    (entry) =>
+      entry &&
+      typeof entry === 'object' &&
+      DAYS.has((entry as DayTime).day) &&
+      ((entry as DayTime).start_time === null || typeof (entry as DayTime).start_time === 'string') &&
+      ((entry as DayTime).end_time === null || typeof (entry as DayTime).end_time === 'string'),
+  );
+}
+
+function nullableString(value: unknown, maxLength: number): string | null | undefined {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value !== 'string' || value.length > maxLength) return undefined;
+  return value;
+}
+
+export const POST: APIRoute = async ({ request }) => {
+  const auth = await requireUser(request);
+  if (auth instanceof Response) return auth;
+
+  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!body) {
+    return new Response(JSON.stringify({ error: 'Invalid request body' }), { status: 400 });
+  }
+
+  // Honeypot — see votes.ts. A real submission still looks accepted.
+  if (body.website) {
+    return new Response(JSON.stringify({ ok: true }), { headers: { 'content-type': 'application/json' } });
+  }
+
+  if (typeof body.type !== 'string' || !LISTING_TYPES.has(body.type)) {
+    return new Response(JSON.stringify({ error: 'Invalid type' }), { status: 400 });
+  }
+  if (body.cost !== null && (typeof body.cost !== 'string' || !COST_TYPES.has(body.cost))) {
+    return new Response(JSON.stringify({ error: 'Invalid cost' }), { status: 400 });
+  }
+  if (typeof body.lat !== 'number' || Number.isNaN(body.lat) || typeof body.lng !== 'number' || Number.isNaN(body.lng)) {
+    return new Response(JSON.stringify({ error: 'Invalid lat/lng' }), { status: 400 });
+  }
+  if (!isValidDaysTimes(body.days_times)) {
+    return new Response(JSON.stringify({ error: 'Invalid days_times' }), { status: 400 });
+  }
+  if (body.signup_required !== null && typeof body.signup_required !== 'boolean') {
+    return new Response(JSON.stringify({ error: 'Invalid signup_required' }), { status: 400 });
+  }
+  if (body.equipment_supplied !== null && typeof body.equipment_supplied !== 'boolean') {
+    return new Response(JSON.stringify({ error: 'Invalid equipment_supplied' }), { status: 400 });
+  }
+  if (body.team_required !== null && typeof body.team_required !== 'boolean') {
+    return new Response(JSON.stringify({ error: 'Invalid team_required' }), { status: 400 });
+  }
+  if (body.min_skill_level !== null && (typeof body.min_skill_level !== 'string' || !SKILL_LEVELS.has(body.min_skill_level))) {
+    return new Response(JSON.stringify({ error: 'Invalid min_skill_level' }), { status: 400 });
+  }
+  const visibility = body.visibility === 'private' ? 'private' : 'public';
+  if (body.visibility !== undefined && !VISIBILITIES.has(visibility)) {
+    return new Response(JSON.stringify({ error: 'Invalid visibility' }), { status: 400 });
+  }
+
+  const name = nullableString(body.name, 200);
+  const externalLink = nullableString(body.external_link, 500);
+  const notes = nullableString(body.notes, 250);
+  const paymentTypes = nullableString(body.payment_types, 100);
+  const photoUrl = nullableString(body.photo_url, 500);
+
+  if (name === undefined || externalLink === undefined || notes === undefined || paymentTypes === undefined || photoUrl === undefined) {
+    return new Response(JSON.stringify({ error: 'A text field is too long' }), { status: 400 });
+  }
+
+  const ip = getClientIp(request);
+  const { allowed } = await checkRateLimit(supabaseAdmin, `submit:${ip}`, { windowMs: 60 * 60 * 1000, max: 5 });
+  if (!allowed) {
+    return new Response(JSON.stringify({ error: 'Too many submissions — please try again later.' }), { status: 429 });
+  }
+
+  // status and submitted_by are always set here, never trusted from the
+  // client — this is exactly what the old RLS insert policy enforced
+  // before it was dropped in favor of this endpoint.
+  const { error } = await supabaseAdmin.from('listings').insert({
+    type: body.type,
+    cost: body.cost ?? null,
+    lat: body.lat,
+    lng: body.lng,
+    days_times: body.days_times,
+    signup_required: body.signup_required ?? null,
+    name,
+    external_link: externalLink,
+    min_skill_level: body.min_skill_level ?? null,
+    equipment_supplied: body.equipment_supplied ?? null,
+    payment_types: paymentTypes,
+    team_required: body.team_required ?? null,
+    notes,
+    visibility,
+    photo_url: photoUrl,
+    submitted_by: auth.userId,
+    status: 'pending',
+  });
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
+
+  return new Response(JSON.stringify({ ok: true }), { headers: { 'content-type': 'application/json' } });
+};
