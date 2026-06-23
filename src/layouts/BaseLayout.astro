@@ -22,15 +22,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
 
-    <!-- Space Grotesk for the header wordmark (ROB-81) — free/OFL-licensed
-         alternative to the Xeroda font referenced in the ticket, which
-         requires a paid commercial license for use on a live site. -->
+    <!-- Sirin Stencil for the header wordmark (ROB-81) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Sirin+Stencil&display=swap" rel="stylesheet" />
     {description && <meta name="description" content={description} />}
     <link rel="canonical" href={canonicalUrl} />
 

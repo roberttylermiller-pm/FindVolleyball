@@ -73,9 +73,13 @@ import logo from '../assets/logo.png';
     }
 
     .brand-wordmark {
-      font-family: "Space Grotesk", var(--font-sans);
-      font-weight: 700;
-      letter-spacing: -0.01em;
+      font-family: "Sirin Stencil", var(--font-sans);
+      /* Sirin Stencil only ships a single (regular) weight — forcing
+         bold would just trigger the browser's synthesized-bold
+         distortion instead of an actual bold cut of the typeface. */
+      font-weight: 400;
+      font-size: 1.05rem;
+      letter-spacing: 0.01em;
     }
 
     .header-actions {
