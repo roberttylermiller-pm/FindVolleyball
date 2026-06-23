@@ -1,6 +1,6 @@
-# Play Volleyball — PRD
+# FindVolleyball — PRD
 
-> Locked as v1 baseline 2026-06-20. Source of truth: [Linear doc](https://linear.app/robert-miller/document/play-volleyball-prd-v1-ee57dfec78d3).
+> Reflects the current shipped state of the product. For the history of how this evolved from the original v1 spec — and the reasoning behind each change — see the [Decisions Log](https://linear.app/robert-miller/document/play-volleyball-decisions-log-e625f8480dac).
 
 ## The Problem
 
@@ -17,8 +17,11 @@ A free, community-driven interactive map showing volleyball meetups. Each listin
 Viewing the map does **not** require sign-in. Filters available:
 
 * **Type**: Indoor / Grass / Beach
-* **Cost**: Free / Paid
+* **Cost**: Free / Paid (a listing with no cost specified is treated as Free for filtering purposes)
+* **Day of week**: defaults to all days selected
 * **Location search**: City, State, or Zip — input is geocoded and the map zooms/centers to that location
+
+Each listing also has a permanent, indexable detail page (`/courts/[slug]`) with its full address, a one-tap Maps link, and SEO metadata — separate from the map view, and server-rendered so it always reflects current data.
 
 ---
 
@@ -29,31 +32,41 @@ Viewing the map does **not** require sign-in. Filters available:
 Submitting a listing requires an account. Supported sign-in methods:
 
 * Google
-* Apple
 * Email + password
+
+*(Apple Sign-In is deferred — requires a paid Apple Developer Program membership with no signal yet that it's needed alongside Google/email.)*
 
 ### Listing Fields
 
 **Required**
 
 * Type: Indoor / Grass / Beach
-* Cost: Free / Paid
-* Location: address autocomplete or drop-a-pin map picker (geocoded to lat/lng)
+* Location: address autocomplete or drop-a-pin map picker (geocoded to lat/lng, reverse-geocoded to a full mailing address)
 * Days & Times: user selects one or more days; each selected day has an optional start time and optional end time
-* Sign-ups required in advance? (Yes/No)
 
 **Optional**
 
 * Name
-* External Link (Reclub, Meetup, Goodrec, etc.)
+* Cost: Free / Paid / Not specified
+* Sign-ups required in advance? (Yes/No/Not specified)
+* External Link (Reclub, Meetup, Goodrec, etc. — supports `mailto:` as well)
 * Minimum Skill Level (C, B, BB, A, AA)
 * Equipment Supplied? (Yes/No)
+* Payment Type (Venmo, Cash, etc.)
+* Team Required? (Yes/No)
 * Additional Notes (250 char max)
 * Public (Open Gym) vs Private (Club)
+* One photo per listing
+
+Cost and "sign-ups required" are optional rather than forced, since real-world listings — especially ones sourced from a third party rather than self-reported by an organizer — often don't have a known answer.
 
 ### Review Workflow
 
 All submissions are queued for **manual review** before appearing on the public map. No listing goes live automatically.
+
+### Spam Protection
+
+Submissions (along with votes and reports below) are protected by a honeypot field and per-IP rate limiting, enforced server-side. Submission additionally requires a verified signed-in session — the server forces `status: pending` and records the submitter regardless of what the client sends.
 
 ---
 
@@ -62,9 +75,10 @@ All submissions are queued for **manual review** before appearing on the public 
 A private dashboard (Robert-only access) for:
 
 * Reviewing and approving/rejecting pending listing submissions
-* Viewing reported listings and their attached notes
-* Manually marking listings inactive/removed
-* (Future) bulk actions, decay overrides
+* Editing any field on an existing listing directly (no need to ask a submitter to resubmit)
+* Viewing reported listings and their attached notes, and archiving a report once it's been handled (archived reports are kept, not deleted, but drop out of the default view)
+* Manually marking listings inactive/removed, or overriding decay status
+* Sorting listings alphabetically, by date added, or by last upvoted
 
 ---
 
@@ -79,25 +93,33 @@ Any visitor can report a listing with a required note (250 char max). Reports ar
 Each listing has a "Still active?" thumbs up / thumbs down control, visible to all visitors (no sign-in required to vote).
 
 * If a listing receives **no upvote for 60 days**, it is automatically flagged and displayed on the map as **"Decayed"** (visually distinct, e.g. greyed out or badge).
-* Decayed listings remain visible but visually deprioritized; future iterations may auto-remove or require re-confirmation.
+* Decayed listings remain visible but visually deprioritized; there is currently no auto-removal or re-confirmation flow (see Open Items).
+
+---
+
+## Site & SEO
+
+* **About and Privacy pages**, linked from the header on every page.
+* **Buy Me a Coffee** link for optional voluntary support.
+* **Vercel Web Analytics** for traffic visibility.
+* Custom domain: **findvolleyball.app**, with a real logo and Open Graph share image.
+* Sitemap covers both static pages and live listing detail pages (fetched at build time so SSR-rendered listing pages still get indexed).
 
 ---
 
 ## Tech Stack
 
-* **Frontend**: Astro — instant load speeds, low-bloat SEO
+* **Frontend**: Astro (hybrid static + server-rendered routes), deployed on Vercel
 * **Map Engine**: Leaflet.js — lightweight (~42kb), no cost
-* **Styling**: Standard CSS Modules using native nesting
 * **Database**: Supabase (PostgreSQL with built-in PostGIS for geographic queries)
-* **Auth**: Supabase Auth (Google, Apple, email/password)
-
-*Stack selected based on recommendations from the Fireship YouTube channel.*
+* **Auth**: Supabase Auth (Google, email/password)
+* **Geocoding**: Nominatim (OpenStreetMap), free tier
 
 ---
 
-## MVP Scope: Seed Region
+## Data Coverage
 
-Initial seed data will cover **Los Angeles / San Fernando Valley**, where Robert has first-hand organizer knowledge of existing meetups.
+Seeded with real, first-hand and community-sourced listings across Greater LA / San Fernando Valley, Orange County, the Inland Empire, and San Diego.
 
 ---
 
@@ -106,34 +128,18 @@ Initial seed data will cover **Los Angeles / San Fernando Valley**, where Robert
 * Decayed-listing removal policy (auto-remove vs. permanent badge vs. re-confirmation flow)
 * Whether "Days & Times" should support recurring exceptions (e.g. holiday cancellations)
 * Possible auto-moderation rules built from report + decay signal combination
+* Apple Sign-In, if iOS-specific demand shows up
+* Multi-admin support / permission levels, if moderation load grows beyond one person
 
 ---
 
-## Final Shipped State (2026-06-23)
+## Changelog
 
-> Everything above is the locked v1 spec, kept as the historical baseline. This section is additive — what actually shipped, including where it deviated from v1 and why. See the [Decisions Log](https://linear.app/robert-miller/document/play-volleyball-decisions-log-e625f8480dac) for the full reasoning behind each change.
+A short pointer list of the most significant changes from the original v1 spec. Full reasoning for each lives in the [Decisions Log](https://linear.app/robert-miller/document/play-volleyball-decisions-log-e625f8480dac).
 
-### Deviations from v1
-
-* **Apple Sign-In deferred.** Requires a paid Apple Developer Program membership ($99/yr) with no signal yet that iOS users specifically need it over Google/email. Revisit if that demand shows up.
-* **Cost and "Sign-ups required?" are optional, not required.** Real-world listings (especially imported from third-party sources rather than self-reported by an organizer) often genuinely don't have a known answer — both fields now accept "Not specified" rather than forcing a guess at submission time. Cost filters treat "unknown" the same as "Free" rather than hiding those listings from anyone filtering by cost.
-* **Rate-limiting / spam prevention is no longer an open item — it shipped.** Honeypot field + per-IP rate limiting on votes, reports, and submissions, with submissions now requiring a verified session server-side rather than trusting client-supplied data. See decisions log for why this took more than the original estimate (no server layer existed for these writes at all until this pass).
-
-### Built beyond the original spec
-
-* **Day-of-week filter**, alongside Type and Cost, defaulting to all days selected.
-* **Full mailing address + one-tap Maps link** on every listing (not just lat/lng), backed by reverse geocoding.
-* **Admin dashboard edit-any-field capability** — v1 only specified approve/reject/inactive/decay-override; admin can now correct any submitted field directly rather than asking the submitter to resubmit.
-* **Report archiving** — reports can be cleared from the default dashboard view (not deleted) once handled, so the queue reflects what's still unprocessed.
-* **Programmatic SEO** (`/courts/[slug]` pages, sitemap, per-listing meta tags) — proposed and built mid-project (M2.5) as a pivot once the competitive landscape made clear that static, indexable listing pages were the one capability no embedded-widget competitor could replicate.
-* **About + Privacy pages**, Buy Me a Coffee link, Vercel Web Analytics, custom domain (findvolleyball.app), and a real logo/OG share image — none specified in v1, added during the launch-polish milestone.
-
-### Still open (unchanged from v1)
-
-* Decayed-listing removal policy — decayed listings still just sit there, visually deprioritized, indefinitely.
-* Recurring-schedule exceptions (e.g. holiday cancellations).
-* Auto-moderation rules from combined report + decay signal.
-
-### Data coverage at launch
-
-Seeded with real, first-hand and community-sourced listings across Greater LA / San Fernando Valley, Orange County, the Inland Empire, and San Diego — substantially broader than the original "LA/SFV only" MVP scope, since organizer-knowledge and community tracking-sheet sources were available for those areas too.
+* Cost and "sign-ups required" became optional fields, not required.
+* Spam/rate-limiting protection shipped for votes, reports, and submissions.
+* `/courts/[slug]` converted from static generation to server-rendered, so listing pages always reflect current data.
+* Day-of-week filter, full address + Maps link, admin edit-any-field, and report archiving were added beyond the original spec.
+* Programmatic SEO (listing detail pages, sitemap) was added mid-project as a competitive differentiator.
+* About/Privacy pages, analytics, custom domain, and branding were added during launch polish.
