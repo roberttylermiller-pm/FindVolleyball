@@ -105,5 +105,35 @@ Initial seed data will cover **Los Angeles / San Fernando Valley**, where Robert
 
 * Decayed-listing removal policy (auto-remove vs. permanent badge vs. re-confirmation flow)
 * Whether "Days & Times" should support recurring exceptions (e.g. holiday cancellations)
-* Rate-limiting / spam prevention on submissions and reports
 * Possible auto-moderation rules built from report + decay signal combination
+
+---
+
+## Final Shipped State (2026-06-23)
+
+> Everything above is the locked v1 spec, kept as the historical baseline. This section is additive — what actually shipped, including where it deviated from v1 and why. See the [Decisions Log](https://linear.app/robert-miller/document/play-volleyball-decisions-log-e625f8480dac) for the full reasoning behind each change.
+
+### Deviations from v1
+
+* **Apple Sign-In deferred.** Requires a paid Apple Developer Program membership ($99/yr) with no signal yet that iOS users specifically need it over Google/email. Revisit if that demand shows up.
+* **Cost and "Sign-ups required?" are optional, not required.** Real-world listings (especially imported from third-party sources rather than self-reported by an organizer) often genuinely don't have a known answer — both fields now accept "Not specified" rather than forcing a guess at submission time. Cost filters treat "unknown" the same as "Free" rather than hiding those listings from anyone filtering by cost.
+* **Rate-limiting / spam prevention is no longer an open item — it shipped.** Honeypot field + per-IP rate limiting on votes, reports, and submissions, with submissions now requiring a verified session server-side rather than trusting client-supplied data. See decisions log for why this took more than the original estimate (no server layer existed for these writes at all until this pass).
+
+### Built beyond the original spec
+
+* **Day-of-week filter**, alongside Type and Cost, defaulting to all days selected.
+* **Full mailing address + one-tap Maps link** on every listing (not just lat/lng), backed by reverse geocoding.
+* **Admin dashboard edit-any-field capability** — v1 only specified approve/reject/inactive/decay-override; admin can now correct any submitted field directly rather than asking the submitter to resubmit.
+* **Report archiving** — reports can be cleared from the default dashboard view (not deleted) once handled, so the queue reflects what's still unprocessed.
+* **Programmatic SEO** (`/courts/[slug]` pages, sitemap, per-listing meta tags) — proposed and built mid-project (M2.5) as a pivot once the competitive landscape made clear that static, indexable listing pages were the one capability no embedded-widget competitor could replicate.
+* **About + Privacy pages**, Buy Me a Coffee link, Vercel Web Analytics, custom domain (findvolleyball.app), and a real logo/OG share image — none specified in v1, added during the launch-polish milestone.
+
+### Still open (unchanged from v1)
+
+* Decayed-listing removal policy — decayed listings still just sit there, visually deprioritized, indefinitely.
+* Recurring-schedule exceptions (e.g. holiday cancellations).
+* Auto-moderation rules from combined report + decay signal.
+
+### Data coverage at launch
+
+Seeded with real, first-hand and community-sourced listings across Greater LA / San Fernando Valley, Orange County, the Inland Empire, and San Diego — substantially broader than the original "LA/SFV only" MVP scope, since organizer-knowledge and community tracking-sheet sources were available for those areas too.
