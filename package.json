@@ -13,6 +13,7 @@
     "seed": "tsx scripts/seed.ts",
     "seed-more": "tsx scripts/seed-more-listings.ts",
     "seed-sd-oc": "tsx scripts/seed-sd-and-oc-listings.ts",
+    "seed-rob-90": "tsx scripts/seed-rob-90-listings.ts",
     "backfill-pseo": "tsx scripts/backfill-pseo-fields.ts"
   },
   "dependencies": {
