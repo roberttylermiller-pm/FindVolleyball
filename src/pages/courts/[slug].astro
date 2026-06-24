@@ -7,6 +7,7 @@ import { capitalize } from '../../lib/text';
 import { formatVisibilityLabel } from '../../lib/listings/visibility';
 import { isEmailAddress, buildExternalLinkHref, getExternalLinkLabel } from '../../lib/listings/externalLink';
 import { buildMapsHref, formatAddressDisplay } from '../../lib/listings/address';
+import { buildListingStructuredData } from '../../lib/seo/structuredData';
 import type { Listing } from '../../types/listing';
 
 // Rendered per-request rather than statically generated (ROB-72, ROB-73):
@@ -36,9 +37,12 @@ const { title, description } = buildCourtMetadata({
   city: listing.city ?? '',
   neighborhood: listing.neighborhood,
 });
+
+const structuredData = buildListingStructuredData(listing, Astro.url.href);
 ---
 
 <BaseLayout title={title} description={description}>
+  <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
   <main class="court-page" data-listing-id={listing.id}>
     <h1>
       {listing.name ?? `${listing.type} volleyball in ${listing.neighborhood ?? listing.city}`}
