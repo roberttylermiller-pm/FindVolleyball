@@ -137,16 +137,48 @@ export interface AddressSuggestion {
   lng: number;
 }
 
-// Backs the live as-you-type autocomplete on /submit (ROB-97) — same
-// search endpoint as geocodeLocation, but limit=5 and no boundingBox
-// (the picker map just centers on the picked suggestion, it doesn't
-// need to fit an extent the way the main map's location search does).
-// Caller is responsible for debouncing; this just makes one request.
-export async function geocodeSuggestions(query: string): Promise<AddressSuggestion[]> {
-  const url = new URL(NOMINATIM_SEARCH_URL);
+interface PhotonProperties {
+  housenumber?: string;
+  street?: string;
+  district?: string;
+  city?: string;
+  locality?: string;
+  state?: string;
+  postcode?: string;
+  country?: string;
+  countrycode?: string;
+  name?: string;
+}
+
+const PHOTON_SEARCH_URL = 'https://photon.komoot.io/api/';
+
+// Backs the live as-you-type autocomplete on /submit (ROB-103, replacing
+// the Nominatim-based version from ROB-97). Nominatim's /search is a
+// general-purpose geocoder doing fuzzy full-text matching across all OSM
+// data (street names, business names, POIs) — fine for "look up this one
+// place" but bad for predictive partial-address typing (e.g. "4524 N
+// Clyb" matched a yacht club in Newfoundland). Photon is purpose-built
+// for autocomplete and supports a lat/lon proximity bias, which Nominatim
+// doesn't. Reverse geocoding above stays on Nominatim — that part works
+// fine and isn't the as-you-type use case.
+//
+// biasLat/biasLng should be the current map view center (or another
+// reasonable "most likely area" guess) — Photon uses it to rank nearby
+// results higher without restricting to that area, so addresses outside
+// it (a different city, a different country) still surface, just lower.
+export async function geocodeSuggestions(
+  query: string,
+  biasLat: number,
+  biasLng: number,
+): Promise<AddressSuggestion[]> {
+  const url = new URL(PHOTON_SEARCH_URL);
   url.searchParams.set('q', query);
-  url.searchParams.set('format', 'jsonv2');
-  url.searchParams.set('limit', '5');
+  // Requests more than the 5 we show — OSM often splits one street into
+  // several way segments that share the same display address, so a few
+  // get collapsed by the de-dupe below before slicing to the final 5.
+  url.searchParams.set('limit', '8');
+  url.searchParams.set('lat', String(biasLat));
+  url.searchParams.set('lon', String(biasLng));
 
   const response = await fetch(url);
 
@@ -154,11 +186,40 @@ export async function geocodeSuggestions(query: string): Promise<AddressSuggesti
     throw new Error(`Address suggestions failed: ${response.status} ${response.statusText}`);
   }
 
-  const results = (await response.json()) as Array<{ display_name: string; lat: string; lon: string }>;
+  const data = (await response.json()) as {
+    features: Array<{ properties: PhotonProperties; geometry: { coordinates: [number, number] } }>;
+  };
 
-  return results.map((result) => ({
-    displayName: result.display_name,
-    lat: Number(result.lat),
-    lng: Number(result.lon),
-  }));
+  const seen = new Set<string>();
+  const suggestions: AddressSuggestion[] = [];
+
+  for (const { properties, geometry } of data.features) {
+    const displayName = formatSuggestionAddress(properties);
+    if (seen.has(displayName)) continue;
+    seen.add(displayName);
+    suggestions.push({ displayName, lat: geometry.coordinates[1], lng: geometry.coordinates[0] });
+    if (suggestions.length === 5) break;
+  }
+
+  return suggestions;
+}
+
+function formatSuggestionAddress(properties: PhotonProperties): string {
+  // Same "Neighborhood Council District" cleanup as reverseGeocode above
+  // — LA-area OSM data tags districts with their formal governance name,
+  // which reads as noise in a suggestion list.
+  const rawDistrict = properties.district ?? properties.locality ?? null;
+  const district = rawDistrict ? rawDistrict.replace(/\s*Neighborhood Council District$/i, '').trim() || null : null;
+  const city = properties.city ?? district;
+
+  const street = [properties.housenumber, properties.street].filter(Boolean).join(' ');
+  const stateAbbreviation = properties.state ? US_STATE_ABBREVIATIONS[properties.state] ?? properties.state : null;
+  const stateZip = [stateAbbreviation, properties.postcode].filter(Boolean).join(' ');
+  // Country only shown outside the US — redundant noise for the common
+  // case, but needed since submissions now come from other countries too.
+  const country = properties.countrycode && properties.countrycode !== 'US' ? properties.country : null;
+
+  return (
+    [properties.name, street, city, stateZip, country].filter(Boolean).join(', ') || properties.name || 'Unknown location'
+  );
 }

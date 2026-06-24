@@ -247,7 +247,13 @@ import 'leaflet/dist/leaflet.css';
     debounceTimer = setTimeout(async () => {
       const requestId = ++latestRequestId;
       try {
-        const results = await geocodeSuggestions(query);
+        // Biases results toward wherever the picker map is currently
+        // centered (starts at DEFAULT_MAP_CENTER, moves if a suggestion
+        // is picked or the pin is dropped/dragged) — without this,
+        // partial queries like a bare street name return scattered
+        // global matches instead of nearby ones.
+        const center = map.getCenter();
+        const results = await geocodeSuggestions(query, center.lat, center.lng);
         if (requestId !== latestRequestId) return; // a newer query has since superseded this one
         suggestions = results;
         highlightedIndex = -1;
