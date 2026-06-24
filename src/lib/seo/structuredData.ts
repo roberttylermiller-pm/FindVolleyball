@@ -1,6 +1,6 @@
 import type { DayOfWeek, Listing } from '../../types/listing';
-import { capitalize } from '../text';
 import { formatAddressDisplay } from '../listings/address';
+import { formatListingTypeLabel } from '../listings/typeLabel';
 
 const SCHEMA_DAY_NAMES: Record<DayOfWeek, string> = {
   sun: 'Sunday',
@@ -32,7 +32,7 @@ export function buildListingStructuredData(listing: Listing, url: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'SportsActivityLocation',
-    name: listing.name ?? `${capitalize(listing.type)} volleyball in ${listing.neighborhood ?? listing.city ?? ''}`,
+    name: listing.name ?? `${formatListingTypeLabel(listing.type)} volleyball in ${listing.neighborhood ?? listing.city ?? ''}`,
     url,
     ...(address && {
       address: {

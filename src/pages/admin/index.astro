@@ -60,7 +60,7 @@ const DAYS: Array<{ value: string; label: string }> = [
           <legend>Type</legend>
           <label><input type="radio" name="type" value="indoor" /> Indoor</label>
           <label><input type="radio" name="type" value="grass" /> Grass</label>
-          <label><input type="radio" name="type" value="beach" /> Beach</label>
+          <label><input type="radio" name="type" value="beach" /> Sand</label>
         </fieldset>
 
         <fieldset>
@@ -445,6 +445,7 @@ const DAYS: Array<{ value: string; label: string }> = [
 
 <script>
   import { supabase } from '../../lib/supabase/client';
+  import { formatListingTypeLabel } from '../../lib/listings/typeLabel';
   import type { DayTime, Listing as FullListing } from '../../types/listing';
 
   const statusMessage = document.querySelector<HTMLParagraphElement>('#status-message');
@@ -522,7 +523,7 @@ const DAYS: Array<{ value: string; label: string }> = [
       .map(
         (listing) => `
         <div class="listing-row" data-id="${listing.id}">
-          <div class="listing-info">${listing.name ?? `${listing.type} listing`} — ${listing.type}, ${listing.cost ?? 'cost unknown'}</div>
+          <div class="listing-info">${listing.name ?? `${formatListingTypeLabel(listing.type)} listing`} — ${formatListingTypeLabel(listing.type)}, ${listing.cost ?? 'cost unknown'}</div>
           <div class="listing-actions">
             <button data-action="edit" data-id="${listing.id}">Edit</button>
             <button class="approve" data-action="approve" data-id="${listing.id}">Approve</button>
@@ -568,7 +569,7 @@ const DAYS: Array<{ value: string; label: string }> = [
         (listing) => `
         <div class="listing-row" data-id="${listing.id}">
           <div class="listing-info">
-            ${listing.name ?? `${listing.type} listing`} — ${listing.status}${listing.decayed ? ' · decayed' : ''}
+            ${listing.name ?? `${formatListingTypeLabel(listing.type)} listing`} — ${listing.status}${listing.decayed ? ' · decayed' : ''}
           </div>
           <div class="listing-actions">
             <button data-action="edit" data-id="${listing.id}">Edit</button>

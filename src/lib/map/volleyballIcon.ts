@@ -2,11 +2,14 @@ import L from 'leaflet';
 import type { ListingType } from '../../types/listing';
 
 // Small emoji badge per surface (ROB-67) — distinguishes Indoor/Grass/
-// Beach markers at a glance without needing separate icon image assets.
+// Sand markers at a glance without needing separate icon image assets.
+// "beach" stays the stored value (see typeLabel.ts) but the badge uses a
+// beach-umbrella icon rather than waves, since plenty of sand courts
+// aren't actually on a beach.
 const TYPE_BADGES: Record<ListingType, string> = {
   indoor: '🏠',
   grass: '🌱',
-  beach: '🌊',
+  beach: '🏖️',
 };
 
 // A CSS-only divIcon (emoji + styled circle) instead of an image asset —

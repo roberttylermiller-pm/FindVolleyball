@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase/client';
 import { buildCourtMetadata } from '../../lib/seo/courtMetadata';
 import { formatDayTime } from '../../lib/listings/formatDayTime';
 import { capitalize } from '../../lib/text';
+import { formatListingTypeLabel } from '../../lib/listings/typeLabel';
 import { formatVisibilityLabel } from '../../lib/listings/visibility';
 import { isEmailAddress, buildExternalLinkHref, getExternalLinkLabel } from '../../lib/listings/externalLink';
 import { buildMapsHref, formatAddressDisplay } from '../../lib/listings/address';
@@ -45,7 +46,7 @@ const structuredData = buildListingStructuredData(listing, Astro.url.href);
   <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
   <main class="court-page" data-listing-id={listing.id}>
     <h1>
-      {listing.name ?? `${listing.type} volleyball in ${listing.neighborhood ?? listing.city}`}
+      {listing.name ?? `${formatListingTypeLabel(listing.type).toLowerCase()} volleyball in ${listing.neighborhood ?? listing.city}`}
       {listing.decayed && <span class="decayed-badge">Decayed — may no longer be active</span>}
     </h1>
     {
@@ -58,7 +59,7 @@ const structuredData = buildListingStructuredData(listing, Astro.url.href);
     {listing.photo_url && <img class="court-photo" src={listing.photo_url} alt={listing.name ?? `${listing.type} volleyball court`} />}
     <dl>
       <dt>Surface</dt>
-      <dd>{capitalize(listing.type)}</dd>
+      <dd>{formatListingTypeLabel(listing.type)}</dd>
       <dt>Cost</dt>
       <dd>{listing.cost ? capitalize(listing.cost) : 'Unknown'}</dd>
       <dt>Visibility</dt>

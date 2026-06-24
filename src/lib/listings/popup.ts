@@ -1,5 +1,6 @@
 import { formatDayTime } from './formatDayTime';
 import { capitalize } from '../text';
+import { formatListingTypeLabel } from './typeLabel';
 import { formatVisibilityLabel } from './visibility';
 import { isEmailAddress, buildExternalLinkHref, getExternalLinkLabel } from './externalLink';
 import { buildMapsHref, formatAddressDisplay } from './address';
@@ -14,7 +15,7 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
   const container = document.createElement('div');
   container.className = 'listing-popup';
 
-  const title = listing.name ?? `${listing.type} volleyball`;
+  const title = listing.name ?? `${formatListingTypeLabel(listing.type).toLowerCase()} volleyball`;
   const schedule = listing.days_times.length > 0 ? listing.days_times.map(formatDayTime).join(', ') : null;
 
   container.innerHTML = `
@@ -33,7 +34,7 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
         ? `<a class="popup-address" href="${buildMapsHref(listing)}" target="_blank" rel="noopener noreferrer">📍 ${formatAddressDisplay(listing)}</a>`
         : ''
     }
-    <div class="popup-meta">${capitalize(listing.type)} &middot; ${listing.cost ? capitalize(listing.cost) : 'Cost unknown'} &middot; ${formatVisibilityLabel(listing.visibility)}</div>
+    <div class="popup-meta">${formatListingTypeLabel(listing.type)} &middot; ${listing.cost ? capitalize(listing.cost) : 'Cost unknown'} &middot; ${formatVisibilityLabel(listing.visibility)}</div>
     ${schedule ? `<div class="popup-row">When: ${schedule}</div>` : ''}
     <div class="popup-row">Sign-up required: ${listing.signup_required === null ? 'Not specified' : listing.signup_required ? 'Yes' : 'No'}</div>
     ${listing.min_skill_level ? `<div class="popup-row">Min skill: ${listing.min_skill_level}</div>` : ''}

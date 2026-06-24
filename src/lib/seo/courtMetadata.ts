@@ -1,5 +1,5 @@
 import type { ListingType } from '../../types/listing';
-import { capitalize } from '../text';
+import { formatListingTypeLabel } from '../listings/typeLabel';
 
 export interface CourtMetadataInput {
   type: ListingType;
@@ -22,8 +22,9 @@ export interface CourtMetadata {
 // back to just "[City]" rather than rendering an empty/dangling comma.
 export function buildCourtMetadata({ type, city, neighborhood }: CourtMetadataInput): CourtMetadata {
   const place = neighborhood ? `${neighborhood}, ${city}` : city;
-  const title = `Where to Play ${capitalize(type)} Volleyball in ${place} | FindVolleyball`;
-  const description = `Find free or paid ${type} volleyball meetups, pickup games, and open gyms in ${place}. View map location, game times, and joining links.`;
+  const label = formatListingTypeLabel(type);
+  const title = `Where to Play ${label} Volleyball in ${place} | FindVolleyball`;
+  const description = `Find free or paid ${label.toLowerCase()} volleyball meetups, pickup games, and open gyms in ${place}. View map location, game times, and joining links.`;
 
   return { title, description };
 }
