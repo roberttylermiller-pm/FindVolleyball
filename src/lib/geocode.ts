@@ -130,3 +130,35 @@ export async function geocodeLocation(query: string): Promise<GeocodeLocationRes
 
   return { lat: Number(result.lat), lng: Number(result.lon), boundingBox: [south, north, west, east] };
 }
+
+export interface AddressSuggestion {
+  displayName: string;
+  lat: number;
+  lng: number;
+}
+
+// Backs the live as-you-type autocomplete on /submit (ROB-97) — same
+// search endpoint as geocodeLocation, but limit=5 and no boundingBox
+// (the picker map just centers on the picked suggestion, it doesn't
+// need to fit an extent the way the main map's location search does).
+// Caller is responsible for debouncing; this just makes one request.
+export async function geocodeSuggestions(query: string): Promise<AddressSuggestion[]> {
+  const url = new URL(NOMINATIM_SEARCH_URL);
+  url.searchParams.set('q', query);
+  url.searchParams.set('format', 'jsonv2');
+  url.searchParams.set('limit', '5');
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Address suggestions failed: ${response.status} ${response.statusText}`);
+  }
+
+  const results = (await response.json()) as Array<{ display_name: string; lat: string; lon: string }>;
+
+  return results.map((result) => ({
+    displayName: result.display_name,
+    lat: Number(result.lat),
+    lng: Number(result.lon),
+  }));
+}
