@@ -24,10 +24,17 @@ jobs:
         # @, ?, or % that need percent-encoding (hit this in practice: a
         # raw password with a "?" in it was parsed as the start of a URI
         # query string). PGPASSWORD has no such parsing ambiguity.
+        #
+        # Connects via Supabase's Session Pooler, not the direct connection
+        # host — the direct host resolves IPv6-only on Supabase's free tier,
+        # and GitHub-hosted runners have no IPv6 route (hit this in
+        # practice: "Network is unreachable"). The pooler is IPv4-reachable
+        # and fine for an infrequent daily dump despite the extra hop.
         env:
           PGHOST: ${{ secrets.SUPABASE_DB_HOST }}
+          PGUSER: ${{ secrets.SUPABASE_DB_USER }}
           PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: pg_dump -h "$PGHOST" -p 5432 -U postgres -d postgres --no-owner --no-privileges -f backup.sql
+        run: pg_dump -h "$PGHOST" -p 5432 -U "$PGUSER" -d postgres --no-owner --no-privileges -f backup.sql
 
       - name: Upload backup artifact
         uses: actions/upload-artifact@v4
