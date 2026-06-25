@@ -15,9 +15,6 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Install postgresql-client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
       - name: Dump database
         # Passed as discrete PG* vars rather than a single connection-string
         # secret — a URI breaks if the DB password contains characters like
@@ -30,11 +27,19 @@ jobs:
         # and GitHub-hosted runners have no IPv6 route (hit this in
         # practice: "Network is unreachable"). The pooler is IPv4-reachable
         # and fine for an infrequent daily dump despite the extra hop.
+        #
+        # Runs pg_dump from the official postgres:17 image rather than the
+        # runner's OS package — ubuntu-latest's postgresql-client is v16,
+        # and pg_dump refuses to dump a server newer than itself (hit this
+        # in practice: Supabase runs Postgres 17).
         env:
           PGHOST: ${{ secrets.SUPABASE_DB_HOST }}
           PGUSER: ${{ secrets.SUPABASE_DB_USER }}
           PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: pg_dump -h "$PGHOST" -p 5432 -U "$PGUSER" -d postgres --no-owner --no-privileges -f backup.sql
+        run: |
+          docker run --rm -e PGPASSWORD postgres:17 \
+            pg_dump -h "$PGHOST" -p 5432 -U "$PGUSER" -d postgres --no-owner --no-privileges \
+            > backup.sql
 
       - name: Upload backup artifact
         uses: actions/upload-artifact@v4
