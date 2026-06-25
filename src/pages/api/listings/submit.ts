@@ -3,6 +3,7 @@ import { requireUser } from '../../../lib/auth/requireUser';
 import { supabaseAdmin } from '../../../lib/supabase/server';
 import { checkRateLimit, getClientIp } from '../../../lib/rateLimit';
 import { isValidGoogleMapsUrl } from '../../../lib/listings/googleMapsUrl';
+import { sendAdminNotification } from '../../../lib/email';
 import type { DayTime } from '../../../types/listing';
 
 export const prerender = false;
@@ -129,6 +130,16 @@ export const POST: APIRoute = async ({ request }) => {
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
+
+  // Awaited rather than fire-and-forget (ROB-102) — Vercel serverless
+  // functions can stop executing once the response is sent, so an
+  // un-awaited call here isn't reliably guaranteed to actually complete.
+  // sendAdminNotification already swallows its own errors, so this
+  // can't fail the submission response either way.
+  await sendAdminNotification(
+    'New listing submitted on FindVolleyball',
+    `${name ?? 'An unnamed listing'} (${body.type}) was just submitted.\n\nAddress as entered: ${submittedAddress ?? 'not provided'}\n\nReview it: https://findvolleyball.app/admin`,
+  );
 
   return new Response(JSON.stringify({ ok: true }), { headers: { 'content-type': 'application/json' } });
 };

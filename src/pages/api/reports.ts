@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../lib/supabase/server';
 import { checkRateLimit, getClientIp } from '../../lib/rateLimit';
+import { sendAdminNotification } from '../../lib/email';
 
 export const prerender = false;
 
@@ -34,6 +35,16 @@ export const POST: APIRoute = async ({ request }) => {
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
+
+  // See submit.ts for why this is awaited rather than fire-and-forget.
+  // Scoped to user-initiated "report an issue" submissions only — the
+  // auto-generated report created on a thumbs-down vote (votes.ts) does
+  // not trigger this, since votes are higher-frequency/no-signin and
+  // would make this noisy fast.
+  await sendAdminNotification(
+    'New report submitted on FindVolleyball',
+    `A listing was reported:\n\n"${note}"\n\nReview it: https://findvolleyball.app/admin`,
+  );
 
   return new Response(JSON.stringify({ ok: true }), { headers: { 'content-type': 'application/json' } });
 };
