@@ -47,6 +47,7 @@ const EDITABLE_FIELDS: EditableField[] = [
   'address',
   'city',
   'neighborhood',
+  'submitted_address',
 ];
 
 export const POST: APIRoute = async ({ request, params }) => {

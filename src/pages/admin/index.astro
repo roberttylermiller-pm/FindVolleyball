@@ -89,7 +89,13 @@ const DAYS: Array<{ value: string; label: string }> = [
       </div>
 
       <label>
-        Street address
+        Address as entered by submitter
+        <input type="text" name="submitted_address" />
+        <span class="field-hint">Raw text the submitter typed — preserved even if geocoding below failed or picked the wrong spot.</span>
+      </label>
+
+      <label>
+        Street address (geocoded)
         <input type="text" name="address" />
       </label>
 
@@ -249,6 +255,17 @@ const DAYS: Array<{ value: string; label: string }> = [
         flex: 1;
       }
 
+      .listing-info-group {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .listing-submitted-address {
+        margin-top: 0.2rem;
+        font-size: 0.8rem;
+        color: #666;
+      }
+
       .listing-actions {
         display: flex;
         flex-wrap: wrap;
@@ -320,6 +337,12 @@ const DAYS: Array<{ value: string; label: string }> = [
       display: flex;
       flex-wrap: wrap;
       gap: 1rem;
+    }
+
+    .field-hint {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: #666;
     }
 
     fieldset {
@@ -523,7 +546,10 @@ const DAYS: Array<{ value: string; label: string }> = [
       .map(
         (listing) => `
         <div class="listing-row" data-id="${listing.id}">
-          <div class="listing-info">${listing.name ?? `${formatListingTypeLabel(listing.type)} listing`} — ${formatListingTypeLabel(listing.type)}, ${listing.cost ?? 'cost unknown'}</div>
+          <div class="listing-info-group">
+            <div class="listing-info">${listing.name ?? `${formatListingTypeLabel(listing.type)} listing`} — ${formatListingTypeLabel(listing.type)}, ${listing.cost ?? 'cost unknown'}</div>
+            ${listing.submitted_address ? `<div class="listing-submitted-address">📍 As entered: ${listing.submitted_address}</div>` : ''}
+          </div>
           <div class="listing-actions">
             <button data-action="edit" data-id="${listing.id}">Edit</button>
             <button class="approve" data-action="approve" data-id="${listing.id}">Approve</button>
@@ -646,6 +672,7 @@ const DAYS: Array<{ value: string; label: string }> = [
     setRadioValue('visibility', listing.visibility);
     (editForm.elements.namedItem('lat') as HTMLInputElement).value = String(listing.lat);
     (editForm.elements.namedItem('lng') as HTMLInputElement).value = String(listing.lng);
+    (editForm.elements.namedItem('submitted_address') as HTMLInputElement).value = listing.submitted_address ?? '';
     (editForm.elements.namedItem('address') as HTMLInputElement).value = listing.address ?? '';
     (editForm.elements.namedItem('city') as HTMLInputElement).value = listing.city ?? '';
     (editForm.elements.namedItem('neighborhood') as HTMLInputElement).value = listing.neighborhood ?? '';
@@ -711,6 +738,7 @@ const DAYS: Array<{ value: string; label: string }> = [
       visibility: formData.get('visibility'),
       lat: Number(formData.get('lat')),
       lng: Number(formData.get('lng')),
+      submitted_address: (formData.get('submitted_address') as string) || null,
       address: (formData.get('address') as string) || null,
       city: (formData.get('city') as string) || null,
       neighborhood: (formData.get('neighborhood') as string) || null,

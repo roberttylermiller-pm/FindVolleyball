@@ -78,8 +78,16 @@ export const POST: APIRoute = async ({ request }) => {
   const notes = nullableString(body.notes, 250);
   const paymentTypes = nullableString(body.payment_types, 100);
   const photoUrl = nullableString(body.photo_url, 500);
+  const submittedAddress = nullableString(body.submitted_address, 300);
 
-  if (name === undefined || externalLink === undefined || notes === undefined || paymentTypes === undefined || photoUrl === undefined) {
+  if (
+    name === undefined ||
+    externalLink === undefined ||
+    notes === undefined ||
+    paymentTypes === undefined ||
+    photoUrl === undefined ||
+    submittedAddress === undefined
+  ) {
     return new Response(JSON.stringify({ error: 'A text field is too long' }), { status: 400 });
   }
 
@@ -106,6 +114,7 @@ export const POST: APIRoute = async ({ request }) => {
     payment_types: paymentTypes,
     team_required: body.team_required ?? null,
     notes,
+    submitted_address: submittedAddress,
     visibility,
     photo_url: photoUrl,
     submitted_by: auth.userId,

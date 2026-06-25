@@ -254,6 +254,7 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       cost: cost === '' ? null : (cost as NewListing['cost']),
       lat: Number(formData.get('lat')),
       lng: Number(formData.get('lng')),
+      submitted_address: (formData.get('address_raw') as string) || null,
       days_times: readDaysTimes(formData),
       signup_required: signupRequired === '' ? null : signupRequired === 'yes',
       name: (formData.get('name') as string) || null,

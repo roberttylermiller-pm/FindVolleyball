@@ -31,6 +31,12 @@ export interface Listing {
   photo_url: string | null;
   payment_types: string | null;
   team_required: boolean | null;
+  // Raw text the submitter typed into the address field, preserved as-is
+  // regardless of whether it was geocoded successfully — distinct from
+  // `address` below, which is the clean, reverse-geocoded mailing
+  // address set at approval time and may be null or wrong if geocoding
+  // failed or picked the wrong spot.
+  submitted_address: string | null;
   status: ListingStatus;
   decayed: boolean;
   last_upvote_at: string | null;
