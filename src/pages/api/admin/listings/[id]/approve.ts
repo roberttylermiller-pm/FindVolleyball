@@ -20,7 +20,7 @@ export const POST: APIRoute = async ({ request, params }) => {
 
   const { data: listing, error: fetchError } = await supabaseAdmin
     .from('listings')
-    .select('id, lat, lng, type, name, slug')
+    .select('id, lat, lng, type, name, slug, address')
     .eq('id', id)
     .single();
 
@@ -36,7 +36,11 @@ export const POST: APIRoute = async ({ request, params }) => {
         await assignPseoFields(listing);
       update.city = city;
       update.neighborhood = neighborhood;
-      update.address = address;
+      // Preserves a higher-confidence address already set at submission
+      // time (extracted directly from a submitter's Google Maps link)
+      // instead of clobbering it with our own reverse-geocoded guess,
+      // which can snap to the wrong nearby street (ROB-109).
+      update.address = listing.address ?? address;
       update.slug = await findUniqueSlug(supabaseAdmin, candidateSlug, listing.id);
       update.last_verified_date = last_verified_date;
     } catch (err) {

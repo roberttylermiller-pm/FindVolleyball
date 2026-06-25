@@ -16,11 +16,17 @@ export function buildMapsHref(listing: Listing): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
-// `address` is the full formatted mailing address when present (street,
-// city, state, zip — see reverseGeocode). Older listings backfilled
-// before that existed may only have neighborhood/city.
+// `address` is the full formatted mailing address when present — either
+// extracted directly from a submitter's Google Maps link (highest
+// confidence — see submit.ts) or our own reverse-geocoded guess from
+// the pin's coordinates, which can snap to the wrong nearby street
+// (ROB-109). Falls back to the submitter's raw typed text before the
+// vaguer neighborhood/city fallback, since that's a real address a
+// person typed, not a derived guess. Older listings backfilled before
+// any of this existed may only have neighborhood/city.
 export function formatAddressDisplay(listing: Listing): string | null {
   if (listing.address) return listing.address;
+  if (listing.submitted_address) return listing.submitted_address;
   if (listing.neighborhood || listing.city) {
     return [listing.neighborhood ?? listing.city].filter(Boolean).join(', ');
   }

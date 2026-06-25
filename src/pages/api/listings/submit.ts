@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { requireUser } from '../../../lib/auth/requireUser';
 import { supabaseAdmin } from '../../../lib/supabase/server';
 import { checkRateLimit, getClientIp } from '../../../lib/rateLimit';
-import { isValidGoogleMapsUrl, decodeLatLngFromGoogleMapsUrl } from '../../../lib/listings/googleMapsUrl';
+import { isValidGoogleMapsUrl, decodeGoogleMapsUrl } from '../../../lib/listings/googleMapsUrl';
 import { sendAdminNotification } from '../../../lib/email';
 import type { DayTime } from '../../../types/listing';
 
@@ -84,11 +84,20 @@ export const POST: APIRoute = async ({ request }) => {
   // address picker.
   let lat = typeof body.lat === 'number' && !Number.isNaN(body.lat) ? body.lat : null;
   let lng = typeof body.lng === 'number' && !Number.isNaN(body.lng) ? body.lng : null;
-  if ((lat === null || lng === null || (lat === 0 && lng === 0)) && typeof body.google_maps_url === 'string') {
-    const decoded = await decodeLatLngFromGoogleMapsUrl(body.google_maps_url);
+  // Also captures a real street address straight from the Maps link
+  // when one is embeddable in it (ROB-109) — preferred over our own
+  // reverse geocoding later at approval time, since geocoding a pin can
+  // snap to the wrong nearby street while the submitter's actual link
+  // is authoritative. Null when the link is just a venue name.
+  let mapsDerivedAddress: string | null = null;
+  if (typeof body.google_maps_url === 'string') {
+    const decoded = await decodeGoogleMapsUrl(body.google_maps_url);
     if (decoded) {
-      lat = decoded.lat;
-      lng = decoded.lng;
+      mapsDerivedAddress = decoded.address;
+      if (lat === null || lng === null || (lat === 0 && lng === 0)) {
+        lat = decoded.lat;
+        lng = decoded.lng;
+      }
     }
   }
   if (lat === null || lng === null || (lat === 0 && lng === 0)) {
@@ -143,6 +152,7 @@ export const POST: APIRoute = async ({ request }) => {
     team_required: body.team_required ?? null,
     notes,
     submitted_address: submittedAddress,
+    address: mapsDerivedAddress,
     google_maps_url: body.google_maps_url || null,
     visibility,
     photo_url: photoUrl,

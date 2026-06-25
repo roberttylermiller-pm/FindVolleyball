@@ -49,20 +49,53 @@ async function resolveMapsUrl(url: string): Promise<string> {
   return response.url || url;
 }
 
-// Combines the two: tries direct extraction first (no network call
-// needed for an already-long URL), and only resolves a short link if
-// that fails. Returns null if neither the URL nor its resolved form
-// contains a usable coordinate pair.
-export async function decodeLatLngFromGoogleMapsUrl(url: string): Promise<LatLng | null> {
-  const direct = extractLatLngFromMapsUrl(url);
-  if (direct) return direct;
+// The `/maps/place/{text}/` segment is sometimes a real address (when
+// the submitter pasted/searched a bare address into Maps) and sometimes
+// just a venue name (e.g. "Drucker Center") — Google Maps URLs don't
+// reliably embed a place's actual mailing address as text; getting that
+// for a named POI would require the Google Places API (a paid service,
+// not something this project uses). Only treated as a usable address
+// when it starts with a number, the one reliable signal that
+// distinguishes "123 Main St" from a venue name — venue names
+// essentially never start with a digit.
+export function extractAddressFromMapsUrl(url: string): string | null {
+  const match = url.match(/\/maps\/place\/([^/]+)\//);
+  if (!match) return null;
 
-  try {
-    const hostname = new URL(url).hostname;
-    if (!SHORT_LINK_HOSTNAMES.has(hostname)) return null;
-    const resolved = await resolveMapsUrl(url);
-    return extractLatLngFromMapsUrl(resolved);
-  } catch {
-    return null;
+  const decoded = decodeURIComponent(match[1].replace(/\+/g, ' ')).trim();
+  return /^\d/.test(decoded) ? decoded : null;
+}
+
+export interface DecodedMapsUrl {
+  lat: number;
+  lng: number;
+  // null when the link's place segment isn't recognizable as a street
+  // address (see extractAddressFromMapsUrl) — callers should fall back
+  // to their own geocoding/submitted text in that case, not treat this
+  // as a failure.
+  address: string | null;
+}
+
+// Combines extraction + short-link resolution into one pass so callers
+// needing both lat/lng and address don't trigger two redirect-following
+// network requests for the same link. Returns null only when no
+// coordinates can be found at all — a missing address is represented
+// as `address: null` within a successful result, not a null return.
+export async function decodeGoogleMapsUrl(url: string): Promise<DecodedMapsUrl | null> {
+  let resolved = url;
+  if (!extractLatLngFromMapsUrl(url)) {
+    try {
+      const hostname = new URL(url).hostname;
+      if (SHORT_LINK_HOSTNAMES.has(hostname)) {
+        resolved = await resolveMapsUrl(url);
+      }
+    } catch {
+      return null;
+    }
   }
+
+  const latLng = extractLatLngFromMapsUrl(resolved);
+  if (!latLng) return null;
+
+  return { ...latLng, address: extractAddressFromMapsUrl(resolved) };
 }

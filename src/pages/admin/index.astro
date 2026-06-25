@@ -780,7 +780,16 @@ const DAYS: Array<{ value: string; label: string }> = [
 
     (editForm?.elements.namedItem('lat') as HTMLInputElement).value = String(data.lat);
     (editForm?.elements.namedItem('lng') as HTMLInputElement).value = String(data.lng);
-    if (decodeMessage) decodeMessage.textContent = `Set to ${data.lat}, ${data.lng}`;
+    // address/city/neighborhood come back when the Maps link embeds a
+    // real address, or as a fallback when it doesn't (re-geocoded using
+    // the link's precise coordinates) — only overwrite fields the
+    // response actually included.
+    if (data.address) (editForm?.elements.namedItem('address') as HTMLInputElement).value = data.address;
+    if (data.city) (editForm?.elements.namedItem('city') as HTMLInputElement).value = data.city;
+    if (data.neighborhood) (editForm?.elements.namedItem('neighborhood') as HTMLInputElement).value = data.neighborhood;
+    if (decodeMessage) {
+      decodeMessage.textContent = data.address ? `Set to ${data.address}` : `Set to ${data.lat}, ${data.lng}`;
+    }
   });
 
   editForm?.addEventListener('submit', async (event) => {
