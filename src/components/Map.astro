@@ -303,6 +303,36 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
     }
   }
 
+  // The search/filter overlay (.map-controls) sits in fixed position on
+  // top of the map but isn't part of Leaflet's own layout — Leaflet's
+  // built-in popup autoPan only keeps a popup inside the *map's* edges,
+  // with no idea that overlay is covering part of it (ROB-117). After
+  // Leaflet's own autopan settles, checks whether the popup is still
+  // covered by that overlay and nudges the map down by the remaining
+  // overlap if so.
+  map.on('popupopen', (event) => {
+    // Leaflet's own autopan (and the popup's open animation) hasn't
+    // necessarily finished laying out the DOM at the instant this event
+    // fires — measuring synchronously here can read a transient,
+    // not-yet-final position. Deferring lets layout settle first, so the
+    // overlap measurement reflects where the popup actually ends up.
+    // setTimeout rather than requestAnimationFrame: rAF is tied to the
+    // paint loop and won't fire while the tab is backgrounded, which a
+    // popup-opening interaction shouldn't depend on.
+    setTimeout(() => {
+      const popupEl = event.popup.getElement();
+      const controls = document.querySelector('.map-controls');
+      if (!popupEl || !controls) return;
+
+      const popupRect = popupEl.getBoundingClientRect();
+      const controlsRect = controls.getBoundingClientRect();
+      const overlap = controlsRect.bottom - popupRect.top;
+      if (overlap > 0) {
+        map.panBy([0, -(overlap + 12)], { animate: true });
+      }
+    }, 0);
+  });
+
   window.addEventListener(LISTING_FILTERS_EVENT, (event) => {
     renderMarkers((event as CustomEvent<ListingFilters>).detail);
   });
