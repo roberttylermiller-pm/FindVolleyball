@@ -4,11 +4,13 @@ import Map from '../components/Map.astro';
 import Filters from '../components/Filters.astro';
 import LocationSearch from '../components/LocationSearch.astro';
 import WelcomeModal from '../components/WelcomeModal.astro';
+import Toast from '../components/Toast.astro';
 ---
 
 <BaseLayout hideFooter>
   <main>
     <WelcomeModal />
+    <Toast />
     <div class="map-controls">
       <LocationSearch />
       <Filters />

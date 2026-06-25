@@ -290,8 +290,10 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       return;
     }
 
-    if (message) message.textContent = 'Submitted! Your listing is pending review.';
-    form.reset();
-    if (paymentTypesField) paymentTypesField.hidden = true;
+    // Stash the success message for the map page's toast (sessionStorage
+    // survives the redirect, unlike setting #submit-message here, which
+    // the user would never see this page again to read).
+    sessionStorage.setItem('fv-toast-message', 'Submitted! Your listing is pending review.');
+    window.location.href = '/';
   });
 </script>

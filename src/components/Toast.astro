@@ -1,0 +1,53 @@
+---
+---
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<style>
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    z-index: 2000;
+    max-width: calc(100vw - 2rem);
+    padding: 0.75rem 1.25rem;
+    color: #1a6b2f;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: #eaf7ed;
+    border: 1px solid #c3e6cb;
+    border-radius: 0.4rem;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 15%);
+    cursor: pointer;
+    transform: translate(-50%, 0);
+
+    &[hidden] {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // Reads a one-shot message left by a previous page (e.g. /submit
+  // redirecting here after a successful submission) — sessionStorage
+  // survives the navigation, a query param wouldn't be any simpler and
+  // would leave clutter in the URL/history.
+  const STORAGE_KEY = 'fv-toast-message';
+  const toast = document.querySelector<HTMLDivElement>('#toast');
+
+  const message = sessionStorage.getItem(STORAGE_KEY);
+  if (message && toast) {
+    sessionStorage.removeItem(STORAGE_KEY);
+    toast.textContent = message;
+    toast.hidden = false;
+
+    const dismiss = () => {
+      toast.hidden = true;
+    };
+    const timer = setTimeout(dismiss, 5000);
+    toast.addEventListener('click', () => {
+      clearTimeout(timer);
+      dismiss();
+    });
+  }
+</script>
