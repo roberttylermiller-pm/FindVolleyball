@@ -864,8 +864,12 @@ const DAYS: Array<{ value: string; label: string }> = [
     }
     if (statusMessage) statusMessage.textContent = '';
     const response = await apiFetch(`/api/admin/listings/${id}/${action}`, { method: 'POST' });
-    await reportIfFailed(response, `Failed to ${action} listing.`);
-    loadDashboard();
+    // loadDashboard() unconditionally clears #status-message, so calling
+    // it after a failure would wipe the error out almost immediately
+    // (ROB-112) — only refresh the list when the action actually
+    // succeeded; nothing changed server-side on failure anyway.
+    const failed = await reportIfFailed(response, `Failed to ${action} listing.`);
+    if (!failed) loadDashboard();
   });
 
   reportsList?.addEventListener('click', async (event) => {
@@ -874,8 +878,8 @@ const DAYS: Array<{ value: string; label: string }> = [
 
     if (statusMessage) statusMessage.textContent = '';
     const response = await apiFetch(`/api/admin/reports/${button.dataset.id}/archive`, { method: 'POST' });
-    await reportIfFailed(response, 'Failed to archive report.');
-    loadDashboard();
+    const failed = await reportIfFailed(response, 'Failed to archive report.');
+    if (!failed) loadDashboard();
   });
 
   allListingsList?.addEventListener('click', async (event) => {
@@ -908,8 +912,8 @@ const DAYS: Array<{ value: string; label: string }> = [
       });
     }
 
-    if (response) await reportIfFailed(response, `Failed to ${action} listing.`);
-    loadDashboard();
+    const failed = response ? await reportIfFailed(response, `Failed to ${action} listing.`) : false;
+    if (!failed) loadDashboard();
   });
 
   supabase.auth.onAuthStateChange((_event, session) => {
