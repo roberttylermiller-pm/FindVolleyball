@@ -40,5 +40,16 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 
+  // A downvote ("no longer happening") is exactly the kind of signal the
+  // reports queue exists for (ROB-105) — surface it there too rather
+  // than leaving it as just a tally only visible via the decay job 60
+  // days later. Best-effort: a failure here shouldn't undo the vote,
+  // which already succeeded.
+  if (body.vote_type === 'down') {
+    await supabaseAdmin
+      .from('reports')
+      .insert({ listing_id: body.listing_id, note: "Marked as 'no longer active' via thumbs-down vote." });
+  }
+
   return new Response(JSON.stringify({ ok: true }), { headers: { 'content-type': 'application/json' } });
 };
