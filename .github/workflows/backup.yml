@@ -1,0 +1,34 @@
+name: Database backup
+
+# ROB-96 — Supabase's free tier has no point-in-time recovery, so a bad
+# migration or accidental admin action has no automated way back. This
+# runs entirely on GitHub's infra (not Supabase or Vercel), so it
+# survives even total loss of the Supabase project itself, not just
+# row-level corruption. Cost: $0 — GitHub Actions minutes and artifact
+# storage are free for a repo this size, no new third-party service.
+on:
+  schedule:
+    - cron: '0 9 * * *' # 9am UTC daily
+  workflow_dispatch: {} # lets you trigger a backup on demand from the Actions tab
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Dump database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: pg_dump "$SUPABASE_DB_URL" --no-owner --no-privileges -f backup.sql
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup.sql
+          # Free-tier artifact storage is finite — 30 daily dumps of a
+          # database this size is well within it, and gives a month of
+          # rollback history without needing manual pruning.
+          retention-days: 30
