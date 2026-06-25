@@ -277,6 +277,12 @@ const DAYS: Array<{ value: string; label: string }> = [
         color: #666;
       }
 
+      .vote-counts {
+        margin-left: 0.5rem;
+        font-size: 0.8rem;
+        color: #666;
+      }
+
       .listing-actions {
         display: flex;
         flex-wrap: wrap;
@@ -639,6 +645,7 @@ const DAYS: Array<{ value: string; label: string }> = [
         <div class="listing-row" data-id="${listing.id}">
           <div class="listing-info">
             ${listing.name ?? `${formatListingTypeLabel(listing.type)} listing`} — ${listing.status}${listing.decayed ? ' · decayed' : ''}
+            <span class="vote-counts">👍 ${listing.upvotes ?? 0} · 👎 ${listing.downvotes ?? 0}</span>
           </div>
           <div class="listing-actions">
             <button data-action="edit" data-id="${listing.id}">Edit</button>

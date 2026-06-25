@@ -54,6 +54,11 @@ export interface Listing {
   address: string | null;
   last_verified_date: string | null;
   slug: string | null;
+
+  // Only present on the admin dashboard's listing fetch (computed from
+  // the votes table on read, not a stored column).
+  upvotes?: number;
+  downvotes?: number;
 }
 
 export type NewListing = Omit<

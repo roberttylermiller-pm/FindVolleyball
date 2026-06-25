@@ -23,7 +23,34 @@ export const GET: APIRoute = async ({ request, url }) => {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 
-  return new Response(JSON.stringify({ listings: data }), {
+  const listingIds = (data ?? []).map((listing) => listing.id);
+  const voteCounts = new Map<string, { upvotes: number; downvotes: number }>();
+
+  if (listingIds.length > 0) {
+    const { data: votes, error: votesError } = await supabaseAdmin
+      .from('votes')
+      .select('listing_id, vote_type')
+      .in('listing_id', listingIds);
+
+    if (votesError) {
+      return new Response(JSON.stringify({ error: votesError.message }), { status: 500 });
+    }
+
+    for (const vote of votes ?? []) {
+      const counts = voteCounts.get(vote.listing_id) ?? { upvotes: 0, downvotes: 0 };
+      if (vote.vote_type === 'up') counts.upvotes += 1;
+      if (vote.vote_type === 'down') counts.downvotes += 1;
+      voteCounts.set(vote.listing_id, counts);
+    }
+  }
+
+  const listings = (data ?? []).map((listing) => ({
+    ...listing,
+    upvotes: voteCounts.get(listing.id)?.upvotes ?? 0,
+    downvotes: voteCounts.get(listing.id)?.downvotes ?? 0,
+  }));
+
+  return new Response(JSON.stringify({ listings }), {
     headers: { 'content-type': 'application/json' },
   });
 };
