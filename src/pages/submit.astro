@@ -238,6 +238,25 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     if (!currentUserId) return;
 
     const formData = new FormData(form);
+
+    // The lat/lng hidden inputs default to empty strings, and
+    // Number('') is 0 (not NaN) — so a listing with no address picked
+    // and no pin dropped used to submit successfully with (0,0),
+    // silently creating an unapprovable listing. Block it here instead,
+    // unless a Google Maps link was provided — the server can try to
+    // decode coordinates from that as a fallback.
+    const lat = Number(formData.get('lat'));
+    const lng = Number(formData.get('lng'));
+    const hasRealLocation = !(lat === 0 && lng === 0);
+    const hasMapsLink = Boolean((formData.get('google_maps_url') as string)?.trim());
+    if (!hasRealLocation && !hasMapsLink) {
+      if (message) {
+        message.textContent =
+          'Please select an address from the suggestions, drop a pin on the map, or paste a Google Maps link for this location.';
+      }
+      return;
+    }
+
     const cost = formData.get('cost');
     const signupRequired = formData.get('signup_required');
     const equipmentSupplied = formData.get('equipment_supplied');

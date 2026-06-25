@@ -105,6 +105,11 @@ const DAYS: Array<{ value: string; label: string }> = [
         <span class="field-hint">If set, the address link on the listing page uses this directly instead of a search query.</span>
       </label>
 
+      <div class="decode-maps-row">
+        <button type="button" id="decode-maps-btn">Decode coordinates from Maps link</button>
+        <span id="decode-maps-message" role="status"></span>
+      </div>
+
       <div class="field-row">
         <label>
           City
@@ -351,6 +356,27 @@ const DAYS: Array<{ value: string; label: string }> = [
       color: #666;
     }
 
+    .decode-maps-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: -0.5rem;
+
+      button {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 0.25rem;
+        cursor: pointer;
+      }
+
+      span {
+        font-size: 0.75rem;
+        color: #666;
+      }
+    }
+
     fieldset {
       display: flex;
       flex-direction: column;
@@ -541,6 +567,17 @@ const DAYS: Array<{ value: string; label: string }> = [
     return response;
   }
 
+  // Action button handlers previously discarded the response entirely —
+  // a failed approve/reject/override (e.g. geocoding failure on
+  // approve) looked like clicking the button did nothing, with no
+  // indication why (ROB-108). Surfaces the API's error message instead.
+  async function reportIfFailed(response: Response, fallback: string): Promise<boolean> {
+    if (response.ok) return false;
+    const data = await response.json().catch(() => ({}));
+    if (statusMessage) statusMessage.textContent = data.error ?? fallback;
+    return true;
+  }
+
   function renderPending(listings: FullListing[]) {
     if (!pendingList) return;
     if (listings.length === 0) {
@@ -721,6 +758,31 @@ const DAYS: Array<{ value: string; label: string }> = [
 
   document.querySelector('#edit-cancel')?.addEventListener('click', () => editDialog?.close());
 
+  document.querySelector('#decode-maps-btn')?.addEventListener('click', async () => {
+    const decodeMessage = document.querySelector<HTMLSpanElement>('#decode-maps-message');
+    const url = (editForm?.elements.namedItem('google_maps_url') as HTMLInputElement | null)?.value.trim();
+    if (!url) {
+      if (decodeMessage) decodeMessage.textContent = 'Add a Google Maps link first.';
+      return;
+    }
+
+    if (decodeMessage) decodeMessage.textContent = 'Decoding…';
+    const response = await apiFetch('/api/admin/listings/decode-maps-link', {
+      method: 'POST',
+      body: JSON.stringify({ url }),
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      if (decodeMessage) decodeMessage.textContent = data.error ?? 'Decode failed.';
+      return;
+    }
+
+    (editForm?.elements.namedItem('lat') as HTMLInputElement).value = String(data.lat);
+    (editForm?.elements.namedItem('lng') as HTMLInputElement).value = String(data.lng);
+    if (decodeMessage) decodeMessage.textContent = `Set to ${data.lat}, ${data.lng}`;
+  });
+
   editForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!editingId) return;
@@ -791,7 +853,9 @@ const DAYS: Array<{ value: string; label: string }> = [
       handleEditClick(id);
       return;
     }
-    await apiFetch(`/api/admin/listings/${id}/${action}`, { method: 'POST' });
+    if (statusMessage) statusMessage.textContent = '';
+    const response = await apiFetch(`/api/admin/listings/${id}/${action}`, { method: 'POST' });
+    await reportIfFailed(response, `Failed to ${action} listing.`);
     loadDashboard();
   });
 
@@ -799,7 +863,9 @@ const DAYS: Array<{ value: string; label: string }> = [
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action="archive-report"]');
     if (!button) return;
 
-    await apiFetch(`/api/admin/reports/${button.dataset.id}/archive`, { method: 'POST' });
+    if (statusMessage) statusMessage.textContent = '';
+    const response = await apiFetch(`/api/admin/reports/${button.dataset.id}/archive`, { method: 'POST' });
+    await reportIfFailed(response, 'Failed to archive report.');
     loadDashboard();
   });
 
@@ -812,23 +878,28 @@ const DAYS: Array<{ value: string; label: string }> = [
     if (action === 'edit') {
       handleEditClick(id);
       return;
-    } else if (action === 'toggle-decayed') {
-      await apiFetch(`/api/admin/listings/${id}/override`, {
+    }
+
+    if (statusMessage) statusMessage.textContent = '';
+    let response: Response | undefined;
+    if (action === 'toggle-decayed') {
+      response = await apiFetch(`/api/admin/listings/${id}/override`, {
         method: 'POST',
         body: JSON.stringify({ decayed: decayed !== 'true' }),
       });
     } else if (action === 'deactivate') {
-      await apiFetch(`/api/admin/listings/${id}/override`, {
+      response = await apiFetch(`/api/admin/listings/${id}/override`, {
         method: 'POST',
         body: JSON.stringify({ status: 'rejected' }),
       });
     } else if (action === 'reactivate') {
-      await apiFetch(`/api/admin/listings/${id}/override`, {
+      response = await apiFetch(`/api/admin/listings/${id}/override`, {
         method: 'POST',
         body: JSON.stringify({ status: 'approved' }),
       });
     }
 
+    if (response) await reportIfFailed(response, `Failed to ${action} listing.`);
     loadDashboard();
   });
 

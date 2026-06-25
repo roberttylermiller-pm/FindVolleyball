@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { requireUser } from '../../../lib/auth/requireUser';
 import { supabaseAdmin } from '../../../lib/supabase/server';
 import { checkRateLimit, getClientIp } from '../../../lib/rateLimit';
-import { isValidGoogleMapsUrl } from '../../../lib/listings/googleMapsUrl';
+import { isValidGoogleMapsUrl, decodeLatLngFromGoogleMapsUrl } from '../../../lib/listings/googleMapsUrl';
 import { sendAdminNotification } from '../../../lib/email';
 import type { DayTime } from '../../../types/listing';
 
@@ -52,9 +52,6 @@ export const POST: APIRoute = async ({ request }) => {
   if (body.cost !== null && (typeof body.cost !== 'string' || !COST_TYPES.has(body.cost))) {
     return new Response(JSON.stringify({ error: 'Invalid cost' }), { status: 400 });
   }
-  if (typeof body.lat !== 'number' || Number.isNaN(body.lat) || typeof body.lng !== 'number' || Number.isNaN(body.lng)) {
-    return new Response(JSON.stringify({ error: 'Invalid lat/lng' }), { status: 400 });
-  }
   if (!isValidDaysTimes(body.days_times)) {
     return new Response(JSON.stringify({ error: 'Invalid days_times' }), { status: 400 });
   }
@@ -76,6 +73,32 @@ export const POST: APIRoute = async ({ request }) => {
   }
   if (body.google_maps_url && (typeof body.google_maps_url !== 'string' || !isValidGoogleMapsUrl(body.google_maps_url))) {
     return new Response(JSON.stringify({ error: 'That doesn’t look like a Google Maps link' }), { status: 400 });
+  }
+
+  // (0,0) means the address picker never actually set a location — the
+  // hidden lat/lng inputs default to empty strings, and Number('') is
+  // 0, not NaN, so this previously slipped past validation and created
+  // listings admin couldn't approve (geocoding (0,0) finds no city).
+  // Falls back to decoding a provided Google Maps link before failing,
+  // since that's a real, common path a submitter takes instead of the
+  // address picker.
+  let lat = typeof body.lat === 'number' && !Number.isNaN(body.lat) ? body.lat : null;
+  let lng = typeof body.lng === 'number' && !Number.isNaN(body.lng) ? body.lng : null;
+  if ((lat === null || lng === null || (lat === 0 && lng === 0)) && typeof body.google_maps_url === 'string') {
+    const decoded = await decodeLatLngFromGoogleMapsUrl(body.google_maps_url);
+    if (decoded) {
+      lat = decoded.lat;
+      lng = decoded.lng;
+    }
+  }
+  if (lat === null || lng === null || (lat === 0 && lng === 0)) {
+    return new Response(
+      JSON.stringify({
+        error:
+          'Location is missing — pick an address from the suggestions, drop a pin on the map, or paste a Google Maps link we can read coordinates from.',
+      }),
+      { status: 400 },
+    );
   }
 
   const name = nullableString(body.name, 200);
@@ -108,8 +131,8 @@ export const POST: APIRoute = async ({ request }) => {
   const { error } = await supabaseAdmin.from('listings').insert({
     type: body.type,
     cost: body.cost ?? null,
-    lat: body.lat,
-    lng: body.lng,
+    lat,
+    lng,
     days_times: body.days_times,
     signup_required: body.signup_required ?? null,
     name,
