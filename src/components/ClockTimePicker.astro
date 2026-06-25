@@ -1,0 +1,319 @@
+---
+// Shared clock-face time picker (ROB-110) — replaces the plain
+// <input type="time"> rows in DayTimePicker.astro and the admin edit
+// dialog with a tap-only analog clock modal, mounted once and driven
+// via the global openClockPicker() API so both call sites share one
+// implementation instead of duplicating the clock UI.
+const HOURS = Array.from({ length: 12 }, (_, i) => (i === 0 ? 12 : i));
+const MINUTE_MARKS = [
+  { minute: 0, i: 0 },
+  { minute: 15, i: 3 },
+  { minute: 30, i: 6 },
+  { minute: 45, i: 9 },
+];
+---
+
+<dialog id="clock-picker-modal" class="clock-picker-card">
+    <div class="clock-picker-header">
+      <span id="clock-picker-display" class="clock-picker-display">--:-- --</span>
+      <div class="clock-picker-ampm">
+        <button type="button" id="clock-picker-am" class="ampm-btn" data-period="AM">AM</button>
+        <button type="button" id="clock-picker-pm" class="ampm-btn" data-period="PM">PM</button>
+      </div>
+    </div>
+
+    <div id="clock-picker-face" class="clock-picker-face" data-mode="hour">
+      <div class="clock-picker-numbers" data-ring="hour">
+        {
+          HOURS.map((hour, i) => (
+            <button type="button" class="clock-number" style={`--i: ${i}`} data-hour={hour}>
+              {hour}
+            </button>
+          ))
+        }
+      </div>
+      <div class="clock-picker-numbers" data-ring="minute" hidden>
+        {
+          MINUTE_MARKS.map(({ minute, i }) => (
+            <button type="button" class="clock-number" style={`--i: ${i}`} data-minute={minute}>
+              {String(minute).padStart(2, '0')}
+            </button>
+          ))
+        }
+      </div>
+      <div class="clock-center"></div>
+    </div>
+
+    <div class="clock-picker-actions">
+      <button type="button" id="clock-picker-clear">Clear</button>
+      <div class="clock-picker-actions-right">
+        <button type="button" id="clock-picker-cancel">Cancel</button>
+        <button type="button" id="clock-picker-ok">OK</button>
+      </div>
+    </div>
+</dialog>
+
+<style>
+  .clock-picker-card::backdrop {
+    background: rgb(0 0 0 / 45%);
+  }
+
+  .clock-picker-card {
+    width: 100%;
+    max-width: 19rem;
+    padding: 1.25rem;
+    background: #1c1c1e;
+    color: white;
+    border: none;
+    border-radius: 0.9rem;
+    box-shadow: 0 4px 20px rgb(0 0 0 / 35%);
+  }
+
+  .clock-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .clock-picker-display {
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .clock-picker-ampm {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .ampm-btn {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #ccc;
+    background: #2c2c2e;
+    border: 1px solid #444;
+    border-radius: 0.4rem;
+    cursor: pointer;
+  }
+
+  .ampm-btn.active {
+    color: #1c1c1e;
+    background: #8ab4f8;
+    border-color: #8ab4f8;
+  }
+
+  .clock-picker-face {
+    position: relative;
+    width: 13.5rem;
+    height: 13.5rem;
+    margin: 0 auto 1rem;
+    background: #2c2c2e;
+    border-radius: 50%;
+  }
+
+  .clock-picker-numbers {
+    position: absolute;
+    inset: 0;
+  }
+
+  .clock-number {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2.1rem;
+    height: 2.1rem;
+    margin: -1.05rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #eee;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transform: rotate(calc(var(--i) * 30deg)) translate(0, -5.2rem) rotate(calc(var(--i) * -30deg));
+  }
+
+  .clock-number:hover,
+  .clock-number:focus-visible {
+    background: #3a3a3c;
+  }
+
+  .clock-number.selected {
+    color: #1c1c1e;
+    background: #8ab4f8;
+  }
+
+  .clock-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.4rem;
+    height: 0.4rem;
+    margin: -0.2rem;
+    background: #8ab4f8;
+    border-radius: 50%;
+  }
+
+  .clock-picker-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .clock-picker-actions-right {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .clock-picker-actions button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #8ab4f8;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  #clock-picker-clear {
+    color: #d88;
+  }
+</style>
+
+<script>
+  type Period = 'AM' | 'PM';
+
+  let onConfirm: ((value: string) => void) | null = null;
+  let hour12: number | null = null;
+  let minute: number | null = null;
+  let period: Period = 'AM';
+
+  const modal = document.querySelector<HTMLDialogElement>('#clock-picker-modal');
+  const face = document.querySelector<HTMLDivElement>('#clock-picker-face');
+  const hourRing = document.querySelector<HTMLDivElement>('[data-ring="hour"]');
+  const minuteRing = document.querySelector<HTMLDivElement>('[data-ring="minute"]');
+  const display = document.querySelector<HTMLSpanElement>('#clock-picker-display');
+  const amBtn = document.querySelector<HTMLButtonElement>('#clock-picker-am');
+  const pmBtn = document.querySelector<HTMLButtonElement>('#clock-picker-pm');
+
+  function formatDisplay(): string {
+    const h = hour12 ?? '--';
+    const m = minute === null ? '--' : String(minute).padStart(2, '0');
+    return `${h}:${m} ${period}`;
+  }
+
+  function render() {
+    if (display) display.textContent = formatDisplay();
+    amBtn?.classList.toggle('active', period === 'AM');
+    pmBtn?.classList.toggle('active', period === 'PM');
+
+    for (const btn of hourRing?.querySelectorAll<HTMLButtonElement>('.clock-number') ?? []) {
+      btn.classList.toggle('selected', Number(btn.dataset.hour) === hour12);
+    }
+    for (const btn of minuteRing?.querySelectorAll<HTMLButtonElement>('.clock-number') ?? []) {
+      btn.classList.toggle('selected', Number(btn.dataset.minute) === minute);
+    }
+  }
+
+  function showMode(mode: 'hour' | 'minute') {
+    if (face) face.dataset.mode = mode;
+    if (hourRing) hourRing.hidden = mode !== 'hour';
+    if (minuteRing) minuteRing.hidden = mode !== 'minute';
+  }
+
+  function to24h(): string {
+    if (hour12 === null || minute === null) return '';
+    let h = hour12 % 12;
+    if (period === 'PM') h += 12;
+    return `${String(h).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  }
+
+  function from24h(value: string) {
+    if (!value) {
+      hour12 = null;
+      minute = null;
+      period = 'AM';
+      return;
+    }
+    const [hStr, mStr] = value.split(':');
+    const h = Number(hStr);
+    period = h >= 12 ? 'PM' : 'AM';
+    hour12 = h % 12 === 0 ? 12 : h % 12;
+    minute = Number(mStr);
+  }
+
+  hourRing?.addEventListener('click', (event) => {
+    const btn = (event.target as HTMLElement).closest<HTMLButtonElement>('.clock-number');
+    if (!btn) return;
+    hour12 = Number(btn.dataset.hour);
+    render();
+    showMode('minute');
+  });
+
+  minuteRing?.addEventListener('click', (event) => {
+    const btn = (event.target as HTMLElement).closest<HTMLButtonElement>('.clock-number');
+    if (!btn) return;
+    minute = Number(btn.dataset.minute);
+    render();
+  });
+
+  amBtn?.addEventListener('click', () => {
+    period = 'AM';
+    render();
+  });
+  pmBtn?.addEventListener('click', () => {
+    period = 'PM';
+    render();
+  });
+
+  document.querySelector('#clock-picker-cancel')?.addEventListener('click', () => {
+    modal?.close();
+    onConfirm = null;
+  });
+
+  document.querySelector('#clock-picker-clear')?.addEventListener('click', () => {
+    onConfirm?.('');
+    modal?.close();
+    onConfirm = null;
+  });
+
+  document.querySelector('#clock-picker-ok')?.addEventListener('click', () => {
+    if (hour12 === null || minute === null) return;
+    onConfirm?.(to24h());
+    modal?.close();
+    onConfirm = null;
+  });
+
+  // Clicking the ::backdrop fires a click on the dialog itself (the
+  // event target is the dialog, not any of its children) — same
+  // click-outside-to-close trick as a plain overlay div.
+  modal?.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      modal.close();
+      onConfirm = null;
+    }
+  });
+
+  // Exposed globally rather than as an ES module export — both
+  // DayTimePicker.astro and the admin edit dialog are separate Astro
+  // islands with their own <script> contexts, so a window-level API is
+  // the simplest way for them to share this one modal instance.
+  (window as unknown as { openClockPicker: (value: string, callback: (value: string) => void) => void }).openClockPicker = (
+    value: string,
+    callback: (value: string) => void,
+  ) => {
+    from24h(value);
+    onConfirm = callback;
+    showMode('hour');
+    render();
+    // showModal() (not just toggling visibility) so this clock dialog
+    // joins the browser's native top-layer stacking — needed so it
+    // renders above the admin edit dialog, which is itself a <dialog>
+    // opened via showModal() and would otherwise sit on top of any
+    // plain fixed-position overlay regardless of z-index.
+    modal?.showModal();
+  };
+</script>

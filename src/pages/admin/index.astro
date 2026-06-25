@@ -138,9 +138,15 @@ const DAYS: Array<{ value: string; label: string }> = [
             DAYS.map(({ value, label }) => (
               <div class="day-time-row" data-day-row={value} hidden>
                 <span class="day-time-row-label">{label}</span>
-                <input type="time" name={`start_${value}`} aria-label={`${label} start time`} />
+                <button type="button" class="time-trigger" data-time-trigger={`start_${value}`} aria-label={`${label} start time`}>
+                  Set start
+                </button>
+                <input type="hidden" name={`start_${value}`} />
                 <span>to</span>
-                <input type="time" name={`end_${value}`} aria-label={`${label} end time`} />
+                <button type="button" class="time-trigger" data-time-trigger={`end_${value}`} aria-label={`${label} end time`}>
+                  Set end
+                </button>
+                <input type="hidden" name={`end_${value}`} />
               </div>
             ))
           }
@@ -469,8 +475,13 @@ const DAYS: Array<{ value: string; label: string }> = [
           font-weight: 600;
         }
 
-        input[type="time"] {
-          padding: 0.2rem;
+        .time-trigger {
+          padding: 0.25rem 0.5rem;
+          font-size: 0.85rem;
+          background: white;
+          border: 1px solid #ccc;
+          border-radius: 0.3rem;
+          cursor: pointer;
         }
       }
     }
@@ -508,6 +519,22 @@ const DAYS: Array<{ value: string; label: string }> = [
   import { supabase } from '../../lib/supabase/client';
   import { formatListingTypeLabel } from '../../lib/listings/typeLabel';
   import type { DayTime, Listing as FullListing } from '../../types/listing';
+
+  function formatTime12h(value: string): string {
+    const [hourStr, minute] = value.split(':');
+    const hour = Number(hourStr);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12}:${minute} ${period}`;
+  }
+
+  function setTimeField(name: string, value: string) {
+    const hiddenInput = editForm?.elements.namedItem(name) as HTMLInputElement | null;
+    const button = editForm?.querySelector<HTMLButtonElement>(`[data-time-trigger="${name}"]`);
+    if (!hiddenInput || !button) return;
+    hiddenInput.value = value;
+    button.textContent = value ? formatTime12h(value) : name.startsWith('start_') ? 'Set start' : 'Set end';
+  }
 
   const statusMessage = document.querySelector<HTMLParagraphElement>('#status-message');
   const content = document.querySelector<HTMLElement>('#admin-content');
@@ -741,10 +768,8 @@ const DAYS: Array<{ value: string; label: string }> = [
       const row = editForm.querySelector<HTMLDivElement>(`[data-day-row="${dayTime.day}"]`);
       if (checkbox) checkbox.checked = true;
       if (row) row.hidden = false;
-      const startInput = editForm.elements.namedItem(`start_${dayTime.day}`) as HTMLInputElement | null;
-      const endInput = editForm.elements.namedItem(`end_${dayTime.day}`) as HTMLInputElement | null;
-      if (startInput) startInput.value = dayTime.start_time ?? '';
-      if (endInput) endInput.value = dayTime.end_time ?? '';
+      setTimeField(`start_${dayTime.day}`, dayTime.start_time ?? '');
+      setTimeField(`end_${dayTime.day}`, dayTime.end_time ?? '');
     }
 
     editDialog.showModal();
@@ -756,10 +781,25 @@ const DAYS: Array<{ value: string; label: string }> = [
       if (!row) return;
       row.hidden = !checkbox.checked;
       if (!checkbox.checked) {
-        for (const timeInput of row.querySelectorAll<HTMLInputElement>('input[type="time"]')) {
-          timeInput.value = '';
+        for (const timeButton of row.querySelectorAll<HTMLButtonElement>('.time-trigger')) {
+          const fieldName = timeButton.dataset.timeTrigger;
+          if (fieldName) setTimeField(fieldName, '');
         }
       }
+    });
+  }
+
+  for (const button of editForm?.querySelectorAll<HTMLButtonElement>('.time-trigger') ?? []) {
+    button.addEventListener('click', () => {
+      const fieldName = button.dataset.timeTrigger;
+      if (!fieldName) return;
+      const hiddenInput = editForm?.elements.namedItem(fieldName) as HTMLInputElement | null;
+      // Looked up lazily — see DayTimePicker.astro for why this can't
+      // be cached at module-eval time.
+      (window as unknown as { openClockPicker: (value: string, callback: (value: string) => void) => void }).openClockPicker(
+        hiddenInput?.value ?? '',
+        (newValue) => setTimeField(fieldName, newValue),
+      );
     });
   }
 

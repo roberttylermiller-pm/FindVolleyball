@@ -28,9 +28,15 @@ const DAYS: Array<{ value: string; label: string }> = [
       DAYS.map(({ value, label }) => (
         <div class="day-time-row" data-day-row={value} hidden>
           <span class="day-time-row-label">{label}</span>
-          <input type="time" name={`start_${value}`} aria-label={`${label} start time`} />
+          <button type="button" class="time-trigger" data-time-trigger={`start_${value}`} aria-label={`${label} start time`}>
+            Set start
+          </button>
+          <input type="hidden" name={`start_${value}`} />
           <span>to</span>
-          <input type="time" name={`end_${value}`} aria-label={`${label} end time`} />
+          <button type="button" class="time-trigger" data-time-trigger={`end_${value}`} aria-label={`${label} end time`}>
+            Set end
+          </button>
+          <input type="hidden" name={`end_${value}`} />
         </div>
       ))
     }
@@ -118,9 +124,14 @@ const DAYS: Array<{ value: string; label: string }> = [
         font-weight: 600;
       }
 
-      input[type="time"] {
-        padding: 0.25rem;
-        font-size: 0.875rem;
+      .time-trigger {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.85rem;
+        color: var(--color-text);
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 0.3rem;
+        cursor: pointer;
       }
 
       span:not(.day-time-row-label) {
@@ -132,6 +143,19 @@ const DAYS: Array<{ value: string; label: string }> = [
 </style>
 
 <script>
+  function formatTime12h(value: string): string {
+    const [hourStr, minute] = value.split(':');
+    const hour = Number(hourStr);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12}:${minute} ${period}`;
+  }
+
+  function resetTrigger(button: HTMLButtonElement, hiddenInput: HTMLInputElement) {
+    hiddenInput.value = '';
+    button.textContent = button.dataset.timeTrigger?.startsWith('start_') ? 'Set start' : 'Set end';
+  }
+
   const chipInputs = document.querySelectorAll<HTMLInputElement>('.day-chip input[type="checkbox"]');
 
   for (const input of chipInputs) {
@@ -141,10 +165,30 @@ const DAYS: Array<{ value: string; label: string }> = [
       if (!row) return;
       row.hidden = !input.checked;
       if (!input.checked) {
-        for (const timeInput of row.querySelectorAll<HTMLInputElement>('input[type="time"]')) {
-          timeInput.value = '';
+        for (const button of row.querySelectorAll<HTMLButtonElement>('.time-trigger')) {
+          const hiddenInput = row.querySelector<HTMLInputElement>(`input[name="${button.dataset.timeTrigger}"]`);
+          if (hiddenInput) resetTrigger(button, hiddenInput);
         }
       }
+    });
+  }
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>('.time-trigger')) {
+    button.addEventListener('click', () => {
+      const hiddenInput = document.querySelector<HTMLInputElement>(`input[name="${button.dataset.timeTrigger}"]`);
+      if (!hiddenInput) return;
+      // Looked up lazily rather than cached at module-eval time —
+      // ClockTimePicker.astro is mounted after this page's content in
+      // BaseLayout, so its script (which sets this) hasn't run yet at
+      // the point this script itself first executes.
+      (window as unknown as { openClockPicker: (value: string, callback: (value: string) => void) => void }).openClockPicker(hiddenInput.value, (newValue) => {
+        if (newValue) {
+          hiddenInput.value = newValue;
+          button.textContent = formatTime12h(newValue);
+        } else {
+          resetTrigger(button, hiddenInput);
+        }
+      });
     });
   }
 </script>
