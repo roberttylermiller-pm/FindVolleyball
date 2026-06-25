@@ -50,20 +50,21 @@ async function resolveMapsUrl(url: string): Promise<string> {
 }
 
 // The `/maps/place/{text}/` segment is sometimes a real address (when
-// the submitter pasted/searched a bare address into Maps) and sometimes
-// just a venue name (e.g. "Drucker Center") — Google Maps URLs don't
-// reliably embed a place's actual mailing address as text; getting that
-// for a named POI would require the Google Places API (a paid service,
-// not something this project uses). Only treated as a usable address
-// when it starts with a number, the one reliable signal that
-// distinguishes "123 Main St" from a venue name — venue names
-// essentially never start with a digit.
+// the submitter pasted/searched a bare address into Maps), sometimes a
+// venue name (e.g. "Drucker Center"), and sometimes — for a manually
+// dropped pin with no nearby named place — a DMS coordinate string
+// Google generates itself (e.g. `39°44'39.0"N 105°02'43.0"W`). Getting
+// a real address for a named POI would require the Google Places API
+// (a paid service this project doesn't use). Treated as a usable
+// address only when it starts with a digit (rules out venue names) and
+// doesn't contain a ° symbol (rules out Google's own DMS placeholder,
+// which also starts with a digit and would otherwise look valid).
 export function extractAddressFromMapsUrl(url: string): string | null {
   const match = url.match(/\/maps\/place\/([^/]+)\//);
   if (!match) return null;
 
   const decoded = decodeURIComponent(match[1].replace(/\+/g, ' ')).trim();
-  return /^\d/.test(decoded) ? decoded : null;
+  return /^\d/.test(decoded) && !decoded.includes('°') ? decoded : null;
 }
 
 export interface DecodedMapsUrl {
