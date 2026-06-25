@@ -1,7 +1,12 @@
 import L from 'leaflet';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+// The `?url` suffix forces a plain Vite asset import (resolves to a
+// string URL). Without it, Astro's image pipeline intercepts .png
+// imports project-wide and returns an ImageMetadata object instead — so
+// Leaflet's iconUrl option (which requires a string) ends up being the
+// literal text "[object Object]", rendering as a broken image.
+import markerIcon from 'leaflet/dist/images/marker-icon.png?url';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png?url';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png?url';
 
 let fixed = false;
 
