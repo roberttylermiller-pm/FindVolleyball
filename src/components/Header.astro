@@ -24,6 +24,9 @@ import logo from '../assets/logo.png';
     >
       ☕
     </a>
+    <button id="feedback-open-btn" type="button" class="feedback-open-btn" title="Submit feedback">
+      Feedback
+    </button>
     <a id="add-entry-btn" class="add-entry-btn" href="/login?redirect=/submit">Add Listing</a>
     <div id="auth-status" class="auth-status">
       <a href="/login">Sign in</a>
@@ -117,6 +120,20 @@ import logo from '../assets/logo.png';
     .coffee-link:hover {
       filter: none;
       opacity: 1;
+    }
+
+    .feedback-open-btn {
+      padding: 0;
+      font-family: inherit;
+      font-size: 0.8rem;
+      color: #666;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .feedback-open-btn:hover {
+      text-decoration: underline;
     }
 
     .add-entry-btn {

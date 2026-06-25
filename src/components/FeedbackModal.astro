@@ -1,0 +1,199 @@
+---
+const MAX_LENGTH = 250;
+---
+
+<div id="feedback-modal" class="feedback-modal" hidden>
+  <div class="feedback-card">
+    <h2>Feedback</h2>
+    <p>Submit feedback about the site or request a feature.</p>
+    <form id="feedback-form">
+      <textarea
+        id="feedback-message"
+        maxlength={MAX_LENGTH}
+        rows={4}
+        placeholder="What's on your mind?"
+        required
+      ></textarea>
+      <div class="feedback-meta">
+        <span id="feedback-count">0 / {MAX_LENGTH}</span>
+      </div>
+      <!-- Honeypot — see votes.ts for why this field exists. -->
+      <input type="text" name="website" id="feedback-website" class="feedback-honeypot" tabindex="-1" autocomplete="off" />
+      <p id="feedback-status" class="feedback-status" role="status"></p>
+      <div class="feedback-actions">
+        <button type="button" id="feedback-cancel">Cancel</button>
+        <button type="submit" id="feedback-submit">Send</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .feedback-modal:not([hidden]) {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgb(0 0 0 / 45%);
+  }
+
+  .feedback-card {
+    width: 100%;
+    max-width: 24rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 20px rgb(0 0 0 / 25%);
+
+    h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.15rem;
+    }
+
+    p {
+      margin: 0 0 0.75rem;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #444;
+    }
+  }
+
+  .feedback-card textarea {
+    width: 100%;
+    padding: 0.6rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+    border: 1px solid #ccc;
+    border-radius: 0.4rem;
+    box-sizing: border-box;
+  }
+
+  .feedback-meta {
+    margin-top: 0.3rem;
+    font-size: 0.8rem;
+    color: #888;
+    text-align: right;
+  }
+
+  .feedback-honeypot {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .feedback-status {
+    min-height: 1.2em;
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: #444;
+  }
+
+  .feedback-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+  }
+
+  .feedback-actions button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 0.4rem;
+    cursor: pointer;
+  }
+
+  #feedback-cancel {
+    color: var(--color-text);
+    background: #eee;
+  }
+
+  #feedback-submit {
+    color: white;
+    background: var(--color-accent);
+  }
+
+  #feedback-submit:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+</style>
+
+<script>
+  const MAX_LENGTH = 250;
+
+  const modal = document.querySelector<HTMLDivElement>('#feedback-modal');
+  const form = document.querySelector<HTMLFormElement>('#feedback-form');
+  const message = document.querySelector<HTMLTextAreaElement>('#feedback-message');
+  const count = document.querySelector<HTMLSpanElement>('#feedback-count');
+  const website = document.querySelector<HTMLInputElement>('#feedback-website');
+  const status = document.querySelector<HTMLParagraphElement>('#feedback-status');
+  const cancelBtn = document.querySelector<HTMLButtonElement>('#feedback-cancel');
+  const submitBtn = document.querySelector<HTMLButtonElement>('#feedback-submit');
+
+  function openModal() {
+    if (!modal) return;
+    modal.hidden = false;
+    if (status) status.textContent = '';
+    if (message) {
+      message.value = '';
+      message.focus();
+    }
+    if (count) count.textContent = `0 / ${MAX_LENGTH}`;
+  }
+
+  function closeModal() {
+    if (modal) modal.hidden = true;
+  }
+
+  document.querySelector('#feedback-open-btn')?.addEventListener('click', openModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  modal?.addEventListener('click', (event) => {
+    if (event.target === modal) closeModal();
+  });
+
+  message?.addEventListener('input', () => {
+    if (count) count.textContent = `${message.value.length} / ${MAX_LENGTH}`;
+  });
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!message || !submitBtn || !status) return;
+
+    const trimmed = message.value.trim();
+    if (!trimmed) return;
+
+    submitBtn.disabled = true;
+    status.textContent = 'Sending...';
+
+    try {
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ message: trimmed, website: website?.value }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        status.textContent = data.error ?? 'Something went wrong — please try again.';
+        return;
+      }
+
+      status.textContent = 'Thanks for the feedback!';
+      message.value = '';
+      if (count) count.textContent = `0 / ${MAX_LENGTH}`;
+      setTimeout(closeModal, 1200);
+    } catch {
+      status.textContent = 'Something went wrong — please try again.';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+</script>

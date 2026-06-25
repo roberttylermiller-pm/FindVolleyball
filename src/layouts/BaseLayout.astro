@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import FeedbackModal from '../components/FeedbackModal.astro';
 import Analytics from '@vercel/analytics/astro';
 
 interface Props {
@@ -45,6 +46,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
     <Header />
     <slot />
     {!hideFooter && <Footer />}
+    <FeedbackModal />
     <Analytics />
   </body>
 </html>
