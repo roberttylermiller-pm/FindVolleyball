@@ -16,15 +16,21 @@ export function buildMapsHref(listing: Listing): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
-// `address` is the full formatted mailing address when present — either
-// extracted directly from a submitter's Google Maps link (highest
-// confidence — see submit.ts) or our own reverse-geocoded guess from
-// the pin's coordinates, which can snap to the wrong nearby street
-// (ROB-109). Falls back to the submitter's raw typed text before the
-// vaguer neighborhood/city fallback, since that's a real address a
-// person typed, not a derived guess. Older listings backfilled before
-// any of this existed may only have neighborhood/city.
+// `address` is usually our own reverse-geocoded guess from the pin's
+// coordinates, which can snap to the wrong nearby building even with a
+// precise pin (ROB-109) — confirmed in practice (ROB-114): a submitter
+// who pastes a Google Maps link has effectively already looked up the
+// real address, so when both a Maps link and their typed address exist,
+// that typed text outranks our own geocoding. Without a Maps link,
+// `address` stays first — there's no stronger signal to prefer over it
+// in that case. Falls back to the vaguer neighborhood/city only when
+// neither real address source exists at all.
+//
+// This is read-time logic, not a stored value — shipping this change
+// alone retroactively changes what every existing listing displays, no
+// backfill needed.
 export function formatAddressDisplay(listing: Listing): string | null {
+  if (listing.google_maps_url && listing.submitted_address) return listing.submitted_address;
   if (listing.address) return listing.address;
   if (listing.submitted_address) return listing.submitted_address;
   if (listing.neighborhood || listing.city) {
