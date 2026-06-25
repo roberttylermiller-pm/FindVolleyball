@@ -1,10 +1,17 @@
 import type { Listing } from '../../types/listing';
+import { isValidGoogleMapsUrl } from './googleMapsUrl';
 
-// Prefer the actual address text — Maps shows a recognizable place
-// (with the venue's name search-matched where possible) instead of a
-// bare coordinate pin. Falls back to lat/lng only when there's no
-// address text to use (e.g. Nominatim had no road name for the point).
+// Prefers a submitter-supplied Google Maps link (ROB-99) when present —
+// useful for venues a plain address search doesn't represent well (an
+// unnamed park court, a specific entrance). Re-validated here rather
+// than trusted blindly, since this value round-trips through the admin
+// edit form too. Otherwise falls back to the actual address text (Maps
+// shows a recognizable place instead of a bare coordinate pin), and
+// finally to lat/lng if there's no address text either.
 export function buildMapsHref(listing: Listing): string {
+  if (listing.google_maps_url && isValidGoogleMapsUrl(listing.google_maps_url)) {
+    return listing.google_maps_url;
+  }
   const query = formatAddressDisplay(listing) ?? `${listing.lat},${listing.lng}`;
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }

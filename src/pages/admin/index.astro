@@ -99,6 +99,12 @@ const DAYS: Array<{ value: string; label: string }> = [
         <input type="text" name="address" />
       </label>
 
+      <label>
+        Google Maps link (optional)
+        <input type="text" name="google_maps_url" placeholder="https://www.google.com/maps/place/..." />
+        <span class="field-hint">If set, the address link on the listing page uses this directly instead of a search query.</span>
+      </label>
+
       <div class="field-row">
         <label>
           City
@@ -674,6 +680,7 @@ const DAYS: Array<{ value: string; label: string }> = [
     (editForm.elements.namedItem('lng') as HTMLInputElement).value = String(listing.lng);
     (editForm.elements.namedItem('submitted_address') as HTMLInputElement).value = listing.submitted_address ?? '';
     (editForm.elements.namedItem('address') as HTMLInputElement).value = listing.address ?? '';
+    (editForm.elements.namedItem('google_maps_url') as HTMLInputElement).value = listing.google_maps_url ?? '';
     (editForm.elements.namedItem('city') as HTMLInputElement).value = listing.city ?? '';
     (editForm.elements.namedItem('neighborhood') as HTMLInputElement).value = listing.neighborhood ?? '';
     setRadioValue('signup_required', listing.signup_required === null ? '' : listing.signup_required ? 'yes' : 'no');
@@ -740,6 +747,7 @@ const DAYS: Array<{ value: string; label: string }> = [
       lng: Number(formData.get('lng')),
       submitted_address: (formData.get('submitted_address') as string) || null,
       address: (formData.get('address') as string) || null,
+      google_maps_url: (formData.get('google_maps_url') as string) || null,
       city: (formData.get('city') as string) || null,
       neighborhood: (formData.get('neighborhood') as string) || null,
       days_times: daysTimes,

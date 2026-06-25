@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { requireUser } from '../../../lib/auth/requireUser';
 import { supabaseAdmin } from '../../../lib/supabase/server';
 import { checkRateLimit, getClientIp } from '../../../lib/rateLimit';
+import { isValidGoogleMapsUrl } from '../../../lib/listings/googleMapsUrl';
 import type { DayTime } from '../../../types/listing';
 
 export const prerender = false;
@@ -72,6 +73,9 @@ export const POST: APIRoute = async ({ request }) => {
   if (body.visibility !== undefined && !VISIBILITIES.has(visibility)) {
     return new Response(JSON.stringify({ error: 'Invalid visibility' }), { status: 400 });
   }
+  if (body.google_maps_url && (typeof body.google_maps_url !== 'string' || !isValidGoogleMapsUrl(body.google_maps_url))) {
+    return new Response(JSON.stringify({ error: 'That doesn’t look like a Google Maps link' }), { status: 400 });
+  }
 
   const name = nullableString(body.name, 200);
   const externalLink = nullableString(body.external_link, 500);
@@ -115,6 +119,7 @@ export const POST: APIRoute = async ({ request }) => {
     team_required: body.team_required ?? null,
     notes,
     submitted_address: submittedAddress,
+    google_maps_url: body.google_maps_url || null,
     visibility,
     photo_url: photoUrl,
     submitted_by: auth.userId,

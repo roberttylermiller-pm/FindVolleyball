@@ -37,6 +37,9 @@ export interface Listing {
   // address set at approval time and may be null or wrong if geocoding
   // failed or picked the wrong spot.
   submitted_address: string | null;
+  // Optional submitter-provided Google Maps page link — preferred over
+  // the constructed maps-search link when present (see buildMapsHref).
+  google_maps_url: string | null;
   status: ListingStatus;
   decayed: boolean;
   last_upvote_at: string | null;

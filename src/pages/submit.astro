@@ -36,6 +36,12 @@ import DayTimePicker from '../components/DayTimePicker.astro';
 
       <LocationPicker />
 
+      <label>
+        Google Maps link (optional)
+        <input type="text" name="google_maps_url" placeholder="https://www.google.com/maps/place/..." />
+        <span class="field-hint">If the address search above doesn't find the exact spot, paste the venue's Google Maps link here instead.</span>
+      </label>
+
       <DayTimePicker />
 
       <fieldset>
@@ -255,6 +261,7 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       lat: Number(formData.get('lat')),
       lng: Number(formData.get('lng')),
       submitted_address: (formData.get('address_raw') as string) || null,
+      google_maps_url: (formData.get('google_maps_url') as string) || null,
       days_times: readDaysTimes(formData),
       signup_required: signupRequired === '' ? null : signupRequired === 'yes',
       name: (formData.get('name') as string) || null,

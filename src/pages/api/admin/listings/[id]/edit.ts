@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin } from '../../../../../lib/auth/requireAdmin';
 import { supabaseAdmin } from '../../../../../lib/supabase/server';
+import { isValidGoogleMapsUrl } from '../../../../../lib/listings/googleMapsUrl';
 import type { DayTime, Listing } from '../../../../../types/listing';
 
 export const prerender = false;
@@ -48,6 +49,7 @@ const EDITABLE_FIELDS: EditableField[] = [
   'city',
   'neighborhood',
   'submitted_address',
+  'google_maps_url',
 ];
 
 export const POST: APIRoute = async ({ request, params }) => {
@@ -109,9 +111,15 @@ export const POST: APIRoute = async ({ request, params }) => {
           return new Response(JSON.stringify({ error: `Invalid ${field}` }), { status: 400 });
         }
         break;
+      case 'google_maps_url':
+        if (value !== null && (typeof value !== 'string' || !isValidGoogleMapsUrl(value))) {
+          return new Response(JSON.stringify({ error: 'Invalid google_maps_url' }), { status: 400 });
+        }
+        break;
       default:
         // name, external_link, notes, payment_types, photo_url, address,
-        // city, neighborhood — free-form nullable text, no enum to check.
+        // city, neighborhood, submitted_address — free-form nullable
+        // text, no enum to check.
         if (value !== null && typeof value !== 'string') {
           return new Response(JSON.stringify({ error: `Invalid ${field}` }), { status: 400 });
         }
