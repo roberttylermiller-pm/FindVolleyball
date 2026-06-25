@@ -128,10 +128,17 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'A text field is too long' }), { status: 400 });
   }
 
-  const ip = getClientIp(request);
-  const { allowed } = await checkRateLimit(supabaseAdmin, `submit:${ip}`, { windowMs: 60 * 60 * 1000, max: 5 });
-  if (!allowed) {
-    return new Response(JSON.stringify({ error: 'Too many submissions — please try again later.' }), { status: 429 });
+  // Exempts the admin from the per-IP submission limit — checked
+  // against the verified auth.userId from requireUser() above, never a
+  // client-supplied field, so this can't be spoofed by claiming to be
+  // an admin in the request body.
+  const { data: profile } = await supabaseAdmin.from('profiles').select('is_admin').eq('id', auth.userId).single();
+  if (!profile?.is_admin) {
+    const ip = getClientIp(request);
+    const { allowed } = await checkRateLimit(supabaseAdmin, `submit:${ip}`, { windowMs: 60 * 60 * 1000, max: 5 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many submissions — please try again later.' }), { status: 429 });
+    }
   }
 
   // status and submitted_by are always set here, never trusted from the
