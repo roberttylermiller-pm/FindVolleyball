@@ -19,9 +19,15 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Dump database
+        # Passed as discrete PG* vars rather than a single connection-string
+        # secret — a URI breaks if the DB password contains characters like
+        # @, ?, or % that need percent-encoding (hit this in practice: a
+        # raw password with a "?" in it was parsed as the start of a URI
+        # query string). PGPASSWORD has no such parsing ambiguity.
         env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: pg_dump "$SUPABASE_DB_URL" --no-owner --no-privileges -f backup.sql
+          PGHOST: ${{ secrets.SUPABASE_DB_HOST }}
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: pg_dump -h "$PGHOST" -p 5432 -U postgres -d postgres --no-owner --no-privileges -f backup.sql
 
       - name: Upload backup artifact
         uses: actions/upload-artifact@v4
