@@ -253,7 +253,13 @@ import logo from '../assets/logo.png';
 
   function renderSignedIn(email: string) {
     if (!container) return;
-    container.innerHTML = `<span>${email}</span><button id="sign-out-btn">Sign out</button>`;
+    // The email used to show inline next to "Sign out" — on a narrow
+    // phone a long address (e.g. a full Gmail address) was wide enough
+    // on its own to push the header back to two rows despite the other
+    // space-saving changes here. Kept as a title tooltip (so it's still
+    // there for anyone who wants to confirm which account) rather than
+    // dropped entirely.
+    container.innerHTML = `<button id="sign-out-btn" title="Signed in as ${email}">Sign out</button>`;
     container.querySelector('#sign-out-btn')?.addEventListener('click', () => {
       supabase.auth.signOut();
     });
