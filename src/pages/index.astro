@@ -12,8 +12,23 @@ import Toast from '../components/Toast.astro';
     <WelcomeModal />
     <Toast />
     <div class="map-controls">
-      <LocationSearch />
-      <Filters />
+      <div class="map-controls-row">
+        <LocationSearch />
+        <!-- Only shown on narrow screens (ROB-120) — on wider ones
+             .filters-panel is always visible and this stays hidden. -->
+        <button
+          id="filters-toggle"
+          type="button"
+          class="filters-toggle"
+          aria-expanded="false"
+          aria-controls="filters-panel"
+        >
+          Filters ▾
+        </button>
+      </div>
+      <div id="filters-panel" class="filters-panel">
+        <Filters />
+      </div>
     </div>
     <Map />
   </main>
@@ -35,6 +50,56 @@ import Toast from '../components/Toast.astro';
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
+    align-items: flex-start;
     gap: 0.75rem;
   }
+
+  .map-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Hidden on wider screens — filters-panel is always visible there,
+     same as before this ticket. Only appears (and only matters) below
+     the breakpoint where the filter chips would otherwise permanently
+     eat into the map's vertical space (ROB-120). */
+  .filters-toggle {
+    display: none;
+  }
+
+  @media (max-width: 480px) {
+    .filters-toggle {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: white;
+      background: #1a1a1a;
+      border: none;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .filters-panel {
+      flex-basis: 100%;
+    }
+
+    .filters-panel:not(.expanded) {
+      display: none;
+    }
+  }
 </style>
+
+<script>
+  const filtersToggle = document.querySelector<HTMLButtonElement>('#filters-toggle');
+  const filtersPanel = document.querySelector<HTMLDivElement>('#filters-panel');
+
+  filtersToggle?.addEventListener('click', () => {
+    const expanded = filtersPanel?.classList.toggle('expanded') ?? false;
+    filtersToggle.setAttribute('aria-expanded', String(expanded));
+    filtersToggle.textContent = expanded ? 'Filters ▴' : 'Filters ▾';
+  });
+</script>

@@ -3,16 +3,11 @@
   --color-text: #1a1a1a;
   --color-accent: #ff7a00;
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Static fallback for the instant before Header.astro's script runs
+     and starts syncing this to the header's actual rendered height
+     (ROB-120) — the map page's filter/search overlay reads this var to
+     sit just below the header. */
   --header-height: 3.5rem;
-}
-
-/* Header wraps to two rows below this width (see Header.astro) — the
-   map page's filter/search overlay reads this var to sit just below
-   the header, so it has to grow to match or it'll overlap row two. */
-@media (max-width: 480px) {
-  :root {
-    --header-height: 8rem;
-  }
 }
 
 * {

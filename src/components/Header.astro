@@ -8,12 +8,29 @@ import logo from '../assets/logo.png';
     <Image src={logo} alt="Find Volleyball" width={28} height={28} class="brand-mark" />
     <span class="brand-wordmark">Find Volleyball</span>
   </a>
-  <div class="header-actions">
-    <nav class="nav-links">
-      <a href="/about">About</a>
-      <a href="/privacy">Privacy</a>
-      <a href="/terms">Terms</a>
-    </nav>
+  <div class="header-primary">
+    <a id="add-entry-btn" class="add-entry-btn" href="/login?redirect=/submit">Add Listing</a>
+    <div id="auth-status" class="auth-status">
+      <a href="/login">Sign in</a>
+      <a href="/signup">Sign up</a>
+    </div>
+    <!-- Only shown on narrow screens (ROB-120) — on wider ones
+         .header-secondary is always visible and this stays hidden. -->
+    <button
+      id="header-menu-toggle"
+      type="button"
+      class="header-menu-toggle"
+      aria-expanded="false"
+      aria-controls="header-secondary"
+      aria-label="More links"
+    >
+      ☰
+    </button>
+  </div>
+  <nav id="header-secondary" class="header-secondary collapsed">
+    <a href="/about">About</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/terms">Terms</a>
     <a
       class="coffee-link"
       href="https://buymeacoffee.com/findvolleyball"
@@ -27,12 +44,7 @@ import logo from '../assets/logo.png';
     <button id="feedback-open-btn" type="button" class="feedback-open-btn" title="Submit feedback">
       Feedback
     </button>
-    <a id="add-entry-btn" class="add-entry-btn" href="/login?redirect=/submit">Add Listing</a>
-    <div id="auth-status" class="auth-status">
-      <a href="/login">Sign in</a>
-      <a href="/signup">Sign up</a>
-    </div>
-  </div>
+  </nav>
 </header>
 
 <style>
@@ -46,22 +58,6 @@ import logo from '../assets/logo.png';
     padding: 0 1.5rem;
     background: white;
     border-bottom: 1px solid #e5e5e5;
-
-    /* On narrow phones the logo keeps its own row and everything else
-       (nav links, coffee, Add Listing, sign in/up) wraps to a second,
-       right-aligned row instead of overflowing past Sign in/Sign up. */
-    @media (max-width: 480px) {
-      height: auto;
-      padding: 0.6rem 1rem;
-      row-gap: 0.4rem;
-
-      .header-actions {
-        flex-basis: 100%;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        gap: 0.75rem;
-      }
-    }
 
     .brand {
       display: flex;
@@ -86,13 +82,13 @@ import logo from '../assets/logo.png';
       letter-spacing: 0.01em;
     }
 
-    .header-actions {
+    .header-primary {
       display: flex;
       align-items: center;
       gap: 1.25rem;
     }
 
-    .nav-links {
+    .header-secondary {
       display: flex;
       align-items: center;
       gap: 0.9rem;
@@ -106,6 +102,21 @@ import logo from '../assets/logo.png';
       a:hover {
         text-decoration: underline;
       }
+    }
+
+    .header-menu-toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      padding: 0;
+      font-size: 1.1rem;
+      line-height: 1;
+      color: var(--color-text);
+      background: none;
+      border: none;
+      cursor: pointer;
     }
 
     .coffee-link {
@@ -163,6 +174,35 @@ import logo from '../assets/logo.png';
         cursor: pointer;
       }
     }
+
+    /* On narrow phones, .header-secondary (About/Privacy/Terms, coffee,
+       Feedback) collapses behind the hamburger toggle by default
+       instead of always wrapping to a second row (ROB-120) — a smaller
+       screen was losing a meaningful chunk of map height to the header
+       before this. Add Listing and Sign in/up stay visible; only the
+       toggle itself appears at this width. Placed after the base rules
+       above (not interleaved with them) so these overrides reliably
+       win the cascade regardless of declaration order elsewhere. */
+    @media (max-width: 480px) {
+      height: auto;
+      padding: 0.6rem 1rem;
+      row-gap: 0.4rem;
+
+      .header-secondary {
+        flex-basis: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 0.75rem;
+
+        &.collapsed {
+          display: none;
+        }
+      }
+
+      .header-menu-toggle {
+        display: flex;
+      }
+    }
   }
 </style>
 
@@ -171,6 +211,28 @@ import logo from '../assets/logo.png';
 
   const container = document.querySelector<HTMLDivElement>('#auth-status');
   const addEntryBtn = document.querySelector<HTMLAnchorElement>('#add-entry-btn');
+
+  const menuToggle = document.querySelector<HTMLButtonElement>('#header-menu-toggle');
+  const secondaryNav = document.querySelector<HTMLElement>('#header-secondary');
+  menuToggle?.addEventListener('click', () => {
+    const expanded = secondaryNav?.classList.toggle('collapsed') === false;
+    menuToggle.setAttribute('aria-expanded', String(expanded));
+  });
+
+  // --header-height drives where the map page's fixed-position search/
+  // filter overlay sits (see index.astro) — kept in sync with the
+  // header's actual rendered height via ResizeObserver rather than
+  // hardcoded per-breakpoint values, so it stays correct whether the
+  // header is its normal single row or briefly two rows while
+  // .header-secondary is expanded on a narrow screen (ROB-120).
+  const header = document.querySelector<HTMLElement>('.site-header');
+  if (header) {
+    const syncHeaderHeight = () => {
+      document.documentElement.style.setProperty('--header-height', `${header.offsetHeight}px`);
+    };
+    new ResizeObserver(syncHeaderHeight).observe(header);
+    syncHeaderHeight();
+  }
 
   function renderSignedOut() {
     if (!container) return;
