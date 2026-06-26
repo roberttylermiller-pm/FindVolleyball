@@ -320,8 +320,22 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   // the conflict entirely instead of trying to out-time it.
   const POPUP_PADDING = 12;
 
+  // Clicking a marker that's part of a cluster (zoomToBoundsOnClick) or
+  // a tight group that needs to spiderfy zooms/spreads the map BEFORE
+  // the popup opens — and that animation can still be running when
+  // 'popupopen' fires. Tracking movestart/zoomstart..moveend/zoomend
+  // lets the correction wait that out too, not just a fixed guess at
+  // how long any one animation takes.
+  let mapIsBusy = false;
+  map.on('movestart zoomstart', () => {
+    mapIsBusy = true;
+  });
+  map.on('moveend zoomend', () => {
+    mapIsBusy = false;
+  });
+
   map.on('popupopen', (event) => {
-    setTimeout(() => {
+    function applyCorrection() {
       const popupEl = event.popup.getElement();
       const controls = document.querySelector('.map-controls');
       if (!popupEl) return;
@@ -359,7 +373,17 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
         // the hop smoothly.
         map.panBy([dx, dy], { animate: false });
       }
-    }, 50);
+    }
+
+    // A cluster-triggered zoom/spiderfy started before this popup even
+    // opened — wait for it to actually finish before measuring, rather
+    // than guessing a fixed delay that a slower device or a chained
+    // zoom-then-spiderfy could still outlast.
+    if (mapIsBusy) {
+      map.once('moveend zoomend', () => setTimeout(applyCorrection, 50));
+    } else {
+      setTimeout(applyCorrection, 50);
+    }
   });
 
   window.addEventListener(LISTING_FILTERS_EVENT, (event) => {
