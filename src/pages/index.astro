@@ -69,20 +69,26 @@ import Toast from '../components/Toast.astro';
   }
 
   @media (max-width: 480px) {
-    /* The search box alone (it has its own min-width) can already use
-       most of the available row width on a narrow phone, leaving no
-       room for this button beside it — it was overflowing off the
-       right edge of the screen instead of wrapping. Letting the row
-       wrap, with this pushed to the end of whichever line it lands on,
-       drops it to its own line under the search box instead. */
+    /* No wrap — the search box (see LocationSearch.astro) is the
+       element that gives up width here, shrinking down to a usable
+       floor instead of this row wrapping the Filters toggle onto its
+       own line. Width:100% so it actually has .map-controls' full
+       available width to negotiate that shrink against, rather than
+       just sizing to its own content (ROB-120 follow-up — a fixed
+       pixel budget computed against a guessed viewport width kept not
+       holding up on a real device). Scoped to this breakpoint only —
+       on wider screens .map-controls-row needs to stay content-sized
+       so filters-panel can still sit beside it via the parent's
+       space-between. */
     .map-controls-row {
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      width: 100%;
     }
 
     .filters-toggle {
       display: inline-flex;
       align-items: center;
-      margin-left: auto;
+      flex-shrink: 0;
       padding: 0.4rem 0.75rem;
       font-size: 0.8rem;
       font-weight: 600;

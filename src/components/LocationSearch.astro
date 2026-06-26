@@ -6,6 +6,14 @@
 <style>
   .location-search {
     display: flex;
+    /* Shrinkable (not just sized to content) so the form gives up
+       width to its sibling Filters toggle (index.astro's
+       .map-controls-row) on a narrow phone rather than the two of them
+       fighting over a fixed pixel budget computed against a guessed
+       viewport width — ROB-120 follow-up. min-width: 0 overrides
+       flexbox's default of never shrinking below content size. */
+    flex: 0 1 auto;
+    min-width: 0;
     gap: 0.5rem;
     padding: 0.5rem;
     background: white;
@@ -13,7 +21,12 @@
     box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
 
     input {
-      min-width: min(12rem, 50vw);
+      /* The actual flexible element — shrinks to whatever's left over
+         after the Search button and Filters toggle take what they
+         need, down to a small floor that's still typeable rather than
+         a sliver. */
+      flex: 1 1 auto;
+      min-width: 3rem;
       padding: 0.4rem 0.6rem;
       font-size: 0.875rem;
       border: 1px solid #ccc;
@@ -21,6 +34,7 @@
     }
 
     button {
+      flex-shrink: 0;
       padding: 0.4rem 0.75rem;
       font-size: 0.875rem;
       color: white;
@@ -28,16 +42,6 @@
       border: none;
       border-radius: 0.25rem;
       cursor: pointer;
-    }
-
-    /* Narrower input so the Filters toggle (a sibling in index.astro's
-       .map-controls-row) fits beside this on the same row instead of
-       wrapping below it (ROB-120 follow-up) — confirmed this still
-       leaves enough room for both down to a 320px-wide viewport. */
-    @media (max-width: 480px) {
-      input {
-        min-width: min(7rem, 38vw);
-      }
     }
   }
 </style>
