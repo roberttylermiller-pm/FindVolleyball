@@ -258,7 +258,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 <script>
   import L from 'leaflet';
   import 'leaflet.markercluster';
-  import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, TILE_LAYER_URL, TILE_LAYER_ATTRIBUTION } from '../lib/map/constants';
+  import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, USER_LOCATION_ZOOM, TILE_LAYER_URL, TILE_LAYER_ATTRIBUTION } from '../lib/map/constants';
   import { createVolleyballIcon } from '../lib/map/volleyballIcon';
   import { fetchApprovedListings } from '../lib/listings/fetchApproved';
   import { LISTING_FILTERS_EVENT, defaultListingFilters, listingMatchesFilters } from '../lib/listings/filters';
@@ -273,6 +273,25 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   // regardless of viewport width.
   const map = L.map('map', { zoomControl: false }).setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
   L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  // Re-centers on the visitor's own location once geolocation resolves
+  // — listings now span more than the original seed region, so the
+  // fixed regional default is a worse first view than it used to be
+  // for someone outside it. Silently keeps today's default view if
+  // permission is denied/unavailable/slow — no fallback UI needed
+  // since the map is already usable at that default the instant it
+  // loads, geolocation only ever improves on it from there.
+  if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        map.setView([position.coords.latitude, position.coords.longitude], USER_LOCATION_ZOOM);
+      },
+      () => {
+        // Permission denied, unavailable, or timed out — no-op.
+      },
+      { timeout: 8000, maximumAge: 5 * 60 * 1000 },
+    );
+  }
 
   L.tileLayer(TILE_LAYER_URL, {
     attribution: TILE_LAYER_ATTRIBUTION,

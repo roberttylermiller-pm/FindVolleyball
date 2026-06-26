@@ -4,6 +4,13 @@
 export const DEFAULT_MAP_CENTER: [number, number] = [34.1808, -118.4517];
 export const DEFAULT_MAP_ZOOM = 11;
 
+// Used when centering on the visitor's own location instead of the
+// default region. City-level rather than neighborhood-tight —
+// listing coverage is still patchy outside the original seed region,
+// so a tight zoom risks landing on an empty map with no pins in view
+// at all if the visitor isn't near existing listings.
+export const USER_LOCATION_ZOOM = 12;
+
 // CARTO Positron — a minimal light basemap (no topo contour lines, no
 // highway shield numbers) chosen over the default OSM "Carto" style for
 // a cleaner, less cluttered look. Free, no API key/account needed,
