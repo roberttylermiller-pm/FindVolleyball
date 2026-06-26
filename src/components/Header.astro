@@ -188,6 +188,18 @@ import logo from '../assets/logo.png';
       padding: 0.6rem 1rem;
       row-gap: 0.4rem;
 
+      /* Logo image alone (still a link to home) — the "Find Volleyball"
+         wordmark was the difference between the brand and the primary
+         actions (Add Listing, Sign in/up, hamburger) fitting on one
+         row versus wrapping to two on a smaller phone. */
+      .brand-wordmark {
+        display: none;
+      }
+
+      .header-primary {
+        gap: 0.6rem;
+      }
+
       .header-secondary {
         flex-basis: 100%;
         flex-wrap: wrap;
