@@ -1,4 +1,5 @@
 import { formatDayTime } from './formatDayTime';
+import { formatDateRange } from './formatDateRange';
 import { capitalize } from '../text';
 import { formatListingTypeLabel } from './typeLabel';
 import { formatVisibilityLabel } from './visibility';
@@ -16,7 +17,12 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
   container.className = 'listing-popup';
 
   const title = listing.name ?? `${formatListingTypeLabel(listing.type).toLowerCase()} volleyball`;
-  const schedule = listing.days_times.length > 0 ? listing.days_times.map(formatDayTime).join(', ') : null;
+  const schedule =
+    listing.start_date && listing.end_date
+      ? formatDateRange(listing.start_date, listing.end_date)
+      : listing.days_times.length > 0
+        ? listing.days_times.map(formatDayTime).join(', ')
+        : null;
 
   container.innerHTML = `
     ${listing.photo_url ? `<img class="popup-photo" src="${listing.photo_url}" alt="${title}" />` : ''}

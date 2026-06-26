@@ -4,6 +4,9 @@ export type SkillLevel = 'C' | 'B' | 'BB' | 'A' | 'AA';
 export type ListingStatus = 'pending' | 'approved' | 'rejected';
 export type Visibility = 'public' | 'private';
 export type DayOfWeek = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
+// 'league' isn't submittable yet (ROB-116) but is already a valid DB
+// value — see the listing_kind migration for why.
+export type ListingKind = 'recurring' | 'tournament' | 'league';
 
 export interface DayTime {
   day: DayOfWeek;
@@ -13,7 +16,12 @@ export interface DayTime {
 
 export interface Listing {
   id: string;
+  listing_kind: ListingKind;
   type: ListingType;
+  // Only set when listing_kind is 'tournament' — a date range instead
+  // of the weekly days_times a recurring meetup uses.
+  start_date: string | null;
+  end_date: string | null;
   // Null means "not specified" — some real-world listings genuinely
   // don't have a known cost (e.g. a third-party rec center page that
   // just doesn't say) rather than defaulting to a guess.
@@ -74,6 +82,15 @@ export type NewListing = Omit<
   | 'address'
   | 'last_verified_date'
   | 'slug'
+  | 'listing_kind'
+  | 'start_date'
+  | 'end_date'
 > & {
   status?: ListingStatus;
+  // All have DB-level defaults (listing_kind defaults to 'recurring',
+  // the dates are nullable) — optional here for the same reason status
+  // is, rather than forcing every caller to spell out 'recurring'/null.
+  listing_kind?: ListingKind;
+  start_date?: string | null;
+  end_date?: string | null;
 };

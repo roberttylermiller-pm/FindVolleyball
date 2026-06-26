@@ -78,6 +78,22 @@ const DAYS: Array<{ value: string; label: string }> = [
       </div>
 
       <div class="field-row">
+        <fieldset>
+          <legend>Kind</legend>
+          <label><input type="radio" name="listing_kind" value="recurring" /> Recurring</label>
+          <label><input type="radio" name="listing_kind" value="tournament" /> Tournament</label>
+        </fieldset>
+        <label>
+          Start date
+          <input type="date" name="start_date" />
+        </label>
+        <label>
+          End date
+          <input type="date" name="end_date" />
+        </label>
+      </div>
+
+      <div class="field-row">
         <label>
           Latitude
           <input type="number" name="lat" step="any" required />
@@ -518,7 +534,13 @@ const DAYS: Array<{ value: string; label: string }> = [
 <script>
   import { supabase } from '../../lib/supabase/client';
   import { formatListingTypeLabel } from '../../lib/listings/typeLabel';
+  import { formatDateRange } from '../../lib/listings/formatDateRange';
   import type { DayTime, Listing as FullListing } from '../../types/listing';
+
+  function tournamentDateLine(listing: FullListing): string {
+    if (!listing.start_date || !listing.end_date) return '';
+    return `<div class="listing-submitted-address">🏆 ${formatDateRange(listing.start_date, listing.end_date)}</div>`;
+  }
 
   function formatTime12h(value: string): string {
     const [hourStr, minute] = value.split(':');
@@ -624,6 +646,7 @@ const DAYS: Array<{ value: string; label: string }> = [
         <div class="listing-row" data-id="${listing.id}">
           <div class="listing-info-group">
             <div class="listing-info">${listing.name ?? `${formatListingTypeLabel(listing.type)} listing`} — ${formatListingTypeLabel(listing.type)}, ${listing.cost ?? 'cost unknown'}</div>
+            ${tournamentDateLine(listing)}
             ${listing.submitted_address ? `<div class="listing-submitted-address">📍 As entered: ${listing.submitted_address}</div>` : ''}
           </div>
           <div class="listing-actions">
@@ -673,6 +696,7 @@ const DAYS: Array<{ value: string; label: string }> = [
           <div class="listing-info">
             ${listing.name ?? `${formatListingTypeLabel(listing.type)} listing`} — ${listing.status}${listing.decayed ? ' · decayed' : ''}
             <span class="vote-counts">👍 ${listing.upvotes ?? 0} · 👎 ${listing.downvotes ?? 0}</span>
+            ${tournamentDateLine(listing)}
           </div>
           <div class="listing-actions">
             <button data-action="edit" data-id="${listing.id}">Edit</button>
@@ -747,6 +771,9 @@ const DAYS: Array<{ value: string; label: string }> = [
     setRadioValue('type', listing.type);
     setRadioValue('cost', listing.cost ?? '');
     setRadioValue('visibility', listing.visibility);
+    setRadioValue('listing_kind', listing.listing_kind);
+    (editForm.elements.namedItem('start_date') as HTMLInputElement).value = listing.start_date ?? '';
+    (editForm.elements.namedItem('end_date') as HTMLInputElement).value = listing.end_date ?? '';
     (editForm.elements.namedItem('lat') as HTMLInputElement).value = String(listing.lat);
     (editForm.elements.namedItem('lng') as HTMLInputElement).value = String(listing.lng);
     (editForm.elements.namedItem('submitted_address') as HTMLInputElement).value = listing.submitted_address ?? '';
@@ -861,6 +888,9 @@ const DAYS: Array<{ value: string; label: string }> = [
       type: formData.get('type'),
       cost: cost === '' ? null : cost,
       visibility: formData.get('visibility'),
+      listing_kind: formData.get('listing_kind'),
+      start_date: (formData.get('start_date') as string) || null,
+      end_date: (formData.get('end_date') as string) || null,
       lat: Number(formData.get('lat')),
       lng: Number(formData.get('lng')),
       submitted_address: (formData.get('submitted_address') as string) || null,

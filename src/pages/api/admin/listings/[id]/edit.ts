@@ -11,6 +11,8 @@ const COST_TYPES = new Set(['free', 'paid']);
 const VISIBILITIES = new Set(['public', 'private']);
 const SKILL_LEVELS = new Set(['C', 'B', 'BB', 'A', 'AA']);
 const DAYS = new Set(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']);
+const LISTING_KINDS = new Set(['recurring', 'tournament', 'league']);
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
 function isValidDaysTimes(value: unknown): value is DayTime[] {
   if (!Array.isArray(value)) return false;
@@ -31,6 +33,9 @@ function isValidDaysTimes(value: unknown): value is DayTime[] {
 type EditableField = keyof Listing;
 const EDITABLE_FIELDS: EditableField[] = [
   'name',
+  'listing_kind',
+  'start_date',
+  'end_date',
   'type',
   'cost',
   'lat',
@@ -114,6 +119,17 @@ export const POST: APIRoute = async ({ request, params }) => {
       case 'google_maps_url':
         if (value !== null && (typeof value !== 'string' || !isValidGoogleMapsUrl(value))) {
           return new Response(JSON.stringify({ error: 'Invalid google_maps_url' }), { status: 400 });
+        }
+        break;
+      case 'listing_kind':
+        if (typeof value !== 'string' || !LISTING_KINDS.has(value)) {
+          return new Response(JSON.stringify({ error: `Invalid listing_kind: ${value}` }), { status: 400 });
+        }
+        break;
+      case 'start_date':
+      case 'end_date':
+        if (value !== null && (typeof value !== 'string' || !DATE_ONLY.test(value))) {
+          return new Response(JSON.stringify({ error: `Invalid ${field}` }), { status: 400 });
         }
         break;
       default:

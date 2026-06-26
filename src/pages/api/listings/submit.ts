@@ -13,6 +13,11 @@ const COST_TYPES = new Set(['free', 'paid']);
 const VISIBILITIES = new Set(['public', 'private']);
 const SKILL_LEVELS = new Set(['C', 'B', 'BB', 'A', 'AA']);
 const DAYS = new Set(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']);
+// 'league' isn't submittable yet (ROB-116) even though the DB allows
+// it as a value — no submission flow exists for it, so accepting it
+// here would create rows the UI has no way to have produced.
+const LISTING_KINDS = new Set(['recurring', 'tournament']);
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
 function isValidDaysTimes(value: unknown): value is DayTime[] {
   if (!Array.isArray(value)) return false;
@@ -46,6 +51,11 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ ok: true }), { headers: { 'content-type': 'application/json' } });
   }
 
+  const listingKind = typeof body.listing_kind === 'string' ? body.listing_kind : 'recurring';
+  if (!LISTING_KINDS.has(listingKind)) {
+    return new Response(JSON.stringify({ error: 'Invalid listing_kind' }), { status: 400 });
+  }
+
   if (typeof body.type !== 'string' || !LISTING_TYPES.has(body.type)) {
     return new Response(JSON.stringify({ error: 'Invalid type' }), { status: 400 });
   }
@@ -54,6 +64,25 @@ export const POST: APIRoute = async ({ request }) => {
   }
   if (!isValidDaysTimes(body.days_times)) {
     return new Response(JSON.stringify({ error: 'Invalid days_times' }), { status: 400 });
+  }
+
+  // Tournaments are one-off dated events rather than weekly recurring
+  // meetups (ROB-113) — a date range is required instead of days_times,
+  // which the submit form sends as an empty array for this kind.
+  let startDate: string | null = null;
+  let endDate: string | null = null;
+  if (listingKind === 'tournament') {
+    if (
+      typeof body.start_date !== 'string' ||
+      typeof body.end_date !== 'string' ||
+      !DATE_ONLY.test(body.start_date) ||
+      !DATE_ONLY.test(body.end_date) ||
+      body.end_date < body.start_date
+    ) {
+      return new Response(JSON.stringify({ error: 'A tournament needs a valid start and end date' }), { status: 400 });
+    }
+    startDate = body.start_date;
+    endDate = body.end_date;
   }
   if (body.signup_required !== null && typeof body.signup_required !== 'boolean') {
     return new Response(JSON.stringify({ error: 'Invalid signup_required' }), { status: 400 });
@@ -145,6 +174,9 @@ export const POST: APIRoute = async ({ request }) => {
   // client — this is exactly what the old RLS insert policy enforced
   // before it was dropped in favor of this endpoint.
   const { error } = await supabaseAdmin.from('listings').insert({
+    listing_kind: listingKind,
+    start_date: startDate,
+    end_date: endDate,
     type: body.type,
     cost: body.cost ?? null,
     lat,

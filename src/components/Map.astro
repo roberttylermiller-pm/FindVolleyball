@@ -295,7 +295,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
     for (const listing of allListings) {
       if (!listingMatchesFilters(listing, filters)) continue;
       const marker = L.marker([listing.lat, listing.lng], {
-        icon: createVolleyballIcon(listing.type),
+        icon: createVolleyballIcon(listing.type, listing.listing_kind),
         opacity: listing.decayed ? 0.5 : 1,
       });
       marker.bindPopup(buildListingPopupContent(listing), { className: 'volleyball-popup', maxWidth: 260 });

@@ -6,10 +6,18 @@ import DayTimePicker from '../components/DayTimePicker.astro';
 
 <BaseLayout title="Submit a listing | FindVolleyball">
   <main class="submit-page">
-    <h1>Submit a listing</h1>
+    <div class="submit-tabs" role="tablist">
+      <button type="button" class="submit-tab" data-tab="recurring" role="tab" aria-selected="true">Recurring Meetups</button>
+      <button type="button" class="submit-tab" data-tab="tournament" role="tab" aria-selected="false">Tournament</button>
+      <!-- League tab hidden until ROB-116 ships -->
+    </div>
+
+    <h1 id="submit-heading">Add a recurring meetup</h1>
     <p id="auth-notice" hidden>You need to <a href="/login">sign in</a> to submit a listing.</p>
 
     <form id="submit-form" hidden>
+      <input type="hidden" name="listing_kind" id="listing-kind-input" value="recurring" />
+
       <label class="honeypot-field" aria-hidden="true">
         Website
         <input type="text" name="website" tabindex="-1" autocomplete="off" />
@@ -21,6 +29,19 @@ import DayTimePicker from '../components/DayTimePicker.astro';
         <label><input type="radio" name="type" value="grass" /> Grass</label>
         <label><input type="radio" name="type" value="beach" /> Sand</label>
       </fieldset>
+
+      <div class="tournament-only" hidden>
+        <div class="field-row">
+          <label>
+            Start date *
+            <input type="date" name="start_date" />
+          </label>
+          <label>
+            End date *
+            <input type="date" name="end_date" />
+          </label>
+        </div>
+      </div>
 
       <fieldset>
         <legend>Cost</legend>
@@ -42,7 +63,9 @@ import DayTimePicker from '../components/DayTimePicker.astro';
         <span class="field-hint">If the address search above doesn't find the exact spot, paste the venue's Google Maps link here instead.</span>
       </label>
 
-      <DayTimePicker />
+      <div class="recurring-only">
+        <DayTimePicker />
+      </div>
 
       <fieldset>
         <legend>Sign-ups required in advance?</legend>
@@ -76,19 +99,21 @@ import DayTimePicker from '../components/DayTimePicker.astro';
         </select>
       </label>
 
-      <fieldset>
-        <legend>Equipment supplied? (optional)</legend>
-        <label><input type="radio" name="equipment_supplied" value="" checked /> Not specified</label>
-        <label><input type="radio" name="equipment_supplied" value="yes" /> Yes</label>
-        <label><input type="radio" name="equipment_supplied" value="no" /> No</label>
-      </fieldset>
+      <div class="recurring-only">
+        <fieldset>
+          <legend>Equipment supplied? (optional)</legend>
+          <label><input type="radio" name="equipment_supplied" value="" checked /> Not specified</label>
+          <label><input type="radio" name="equipment_supplied" value="yes" /> Yes</label>
+          <label><input type="radio" name="equipment_supplied" value="no" /> No</label>
+        </fieldset>
 
-      <fieldset>
-        <legend>Team required on signup? (optional)</legend>
-        <label><input type="radio" name="team_required" value="" checked /> Not specified</label>
-        <label><input type="radio" name="team_required" value="yes" /> Yes</label>
-        <label><input type="radio" name="team_required" value="no" /> No</label>
-      </fieldset>
+        <fieldset>
+          <legend>Team required on signup? (optional)</legend>
+          <label><input type="radio" name="team_required" value="" checked /> Not specified</label>
+          <label><input type="radio" name="team_required" value="yes" /> Yes</label>
+          <label><input type="radio" name="team_required" value="no" /> No</label>
+        </fieldset>
+      </div>
 
       <label>
         Additional notes (optional, 250 char max)
@@ -101,11 +126,13 @@ import DayTimePicker from '../components/DayTimePicker.astro';
         <span class="field-hint">JPEG, PNG, or WebP — 5MB max</span>
       </label>
 
-      <fieldset>
-        <legend>Visibility</legend>
-        <label><input type="radio" name="visibility" value="public" checked /> Public (Open Gym)</label>
-        <label><input type="radio" name="visibility" value="private" /> Private (Club)</label>
-      </fieldset>
+      <div class="recurring-only">
+        <fieldset>
+          <legend>Visibility</legend>
+          <label><input type="radio" name="visibility" value="public" checked /> Public (Open Gym)</label>
+          <label><input type="radio" name="visibility" value="private" /> Private (Club)</label>
+        </fieldset>
+      </div>
 
       <button type="submit">Submit listing</button>
     </form>
@@ -157,7 +184,21 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       font-size: 0.875rem;
     }
 
+    .field-row {
+      display: flex;
+      gap: 1rem;
+
+      label {
+        flex: 1;
+      }
+    }
+
     #payment-types-field[hidden] {
+      display: none;
+    }
+
+    .tournament-only[hidden],
+    .recurring-only[hidden] {
       display: none;
     }
 
@@ -180,6 +221,7 @@ import DayTimePicker from '../components/DayTimePicker.astro';
 
     input[type="text"],
     input[type="url"],
+    input[type="date"],
     select,
     textarea {
       padding: 0.5rem;
@@ -199,6 +241,31 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       cursor: pointer;
     }
   }
+
+  .submit-tabs {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 32rem;
+    margin: 1.5rem auto 0;
+    padding: 0 1rem;
+  }
+
+  .submit-tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #666;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .submit-tab[aria-selected="true"] {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+  }
 </style>
 
 <script>
@@ -210,6 +277,47 @@ import DayTimePicker from '../components/DayTimePicker.astro';
   const form = document.querySelector<HTMLFormElement>('#submit-form');
   const message = document.querySelector<HTMLParagraphElement>('#submit-message');
   const authNotice = document.querySelector<HTMLParagraphElement>('#auth-notice');
+  const heading = document.querySelector<HTMLHeadingElement>('#submit-heading');
+  const listingKindInput = document.querySelector<HTMLInputElement>('#listing-kind-input');
+
+  const TAB_HEADINGS: Record<string, string> = {
+    recurring: 'Add a recurring meetup',
+    tournament: 'Add a listing for an upcoming tournament',
+  };
+
+  let activeTab = 'recurring';
+
+  function setTab(tab: string) {
+    activeTab = tab;
+    if (listingKindInput) listingKindInput.value = tab;
+    if (heading) heading.textContent = TAB_HEADINGS[tab] ?? TAB_HEADINGS.recurring;
+
+    for (const tabBtn of document.querySelectorAll<HTMLButtonElement>('.submit-tab')) {
+      tabBtn.setAttribute('aria-selected', String(tabBtn.dataset.tab === tab));
+    }
+
+    // Hiding a field via the [hidden] attribute also exempts any
+    // `required` input inside it from constraint validation — so
+    // toggling these is enough to make each tab enforce only its own
+    // required fields, no extra validation-clearing logic needed.
+    for (const el of document.querySelectorAll<HTMLElement>('.tournament-only')) {
+      el.hidden = tab !== 'tournament';
+    }
+    for (const el of document.querySelectorAll<HTMLElement>('.recurring-only')) {
+      el.hidden = tab !== 'recurring';
+    }
+
+    const startDateInput = form?.elements.namedItem('start_date') as HTMLInputElement | null;
+    const endDateInput = form?.elements.namedItem('end_date') as HTMLInputElement | null;
+    if (startDateInput) startDateInput.required = tab === 'tournament';
+    if (endDateInput) endDateInput.required = tab === 'tournament';
+  }
+
+  for (const tabBtn of document.querySelectorAll<HTMLButtonElement>('.submit-tab')) {
+    tabBtn.addEventListener('click', () => {
+      if (tabBtn.dataset.tab) setTab(tabBtn.dataset.tab);
+    });
+  }
 
   // Cost amount only makes sense once "Paid" is picked — keeps it out
   // of the way otherwise instead of looking like an unrelated field.
@@ -238,6 +346,7 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     if (!currentUserId) return;
 
     const formData = new FormData(form);
+    const isTournament = activeTab === 'tournament';
 
     // The lat/lng hidden inputs default to empty strings, and
     // Number('') is 0 (not NaN) — so a listing with no address picked
@@ -254,6 +363,13 @@ import DayTimePicker from '../components/DayTimePicker.astro';
         message.textContent =
           'Please select an address from the suggestions, drop a pin on the map, or paste a Google Maps link for this location.';
       }
+      return;
+    }
+
+    const startDate = (formData.get('start_date') as string) || null;
+    const endDate = (formData.get('end_date') as string) || null;
+    if (isTournament && (!startDate || !endDate || endDate < startDate)) {
+      if (message) message.textContent = 'Please enter a valid start and end date for the tournament.';
       return;
     }
 
@@ -275,22 +391,31 @@ import DayTimePicker from '../components/DayTimePicker.astro';
 
     const payload = {
       website: (formData.get('website') as string) || '',
+      listing_kind: activeTab,
+      start_date: isTournament ? startDate : null,
+      end_date: isTournament ? endDate : null,
       type: formData.get('type') as NewListing['type'],
       cost: cost === '' ? null : (cost as NewListing['cost']),
       lat: Number(formData.get('lat')),
       lng: Number(formData.get('lng')),
       submitted_address: (formData.get('address_raw') as string) || null,
       google_maps_url: (formData.get('google_maps_url') as string) || null,
-      days_times: readDaysTimes(formData),
+      // Tournaments don't recur on weekly days — sent as empty rather
+      // than reading the (hidden, untouched) DayTimePicker fields.
+      days_times: isTournament ? [] : readDaysTimes(formData),
       signup_required: signupRequired === '' ? null : signupRequired === 'yes',
       name: (formData.get('name') as string) || null,
       external_link: (formData.get('external_link') as string) || null,
       min_skill_level: (formData.get('min_skill_level') as NewListing['min_skill_level']) || null,
-      equipment_supplied: equipmentSupplied === '' ? null : equipmentSupplied === 'yes',
+      // Not asked of tournament submitters (ROB-113's field list omits
+      // them for that tab) — always null for that kind regardless of
+      // these radios' default-checked state.
+      equipment_supplied: isTournament ? null : equipmentSupplied === '' ? null : equipmentSupplied === 'yes',
       payment_types: (formData.get('payment_types') as string) || null,
-      team_required: teamRequired === '' ? null : teamRequired === 'yes',
+      team_required: isTournament ? null : teamRequired === '' ? null : teamRequired === 'yes',
       notes: (formData.get('notes') as string) || null,
-      visibility: formData.get('visibility') as NewListing['visibility'],
+      // Visibility toggle isn't shown for tournaments — always public.
+      visibility: (isTournament ? 'public' : formData.get('visibility')) as NewListing['visibility'],
       photo_url: photoUrl,
     };
 
