@@ -298,39 +298,68 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
         icon: createVolleyballIcon(listing.type, listing.listing_kind),
         opacity: listing.decayed ? 0.5 : 1,
       });
-      marker.bindPopup(buildListingPopupContent(listing), { className: 'volleyball-popup', maxWidth: 260 });
+      // autoPan: false — see the popupopen handler below for why
+      // Leaflet's own version of this can't be left enabled (ROB-119).
+      marker.bindPopup(buildListingPopupContent(listing), { className: 'volleyball-popup', maxWidth: 260, autoPan: false });
       clusterGroup.addLayer(marker);
     }
   }
 
-  // The search/filter overlay (.map-controls) sits in fixed position on
-  // top of the map but isn't part of Leaflet's own layout — Leaflet's
-  // built-in popup autoPan only keeps a popup inside the *map's* edges,
-  // with no idea that overlay is covering part of it (ROB-117). After
-  // Leaflet's own autopan settles, checks whether the popup is still
-  // covered by that overlay and nudges the map down by the remaining
-  // overlap if so.
+  // Leaflet's built-in popup autoPan (disabled above, see bindPopup)
+  // re-runs on every subsequent map move while a popup is open, not
+  // just once at open time — so any manual map.panBy() call made while
+  // a popup is showing gets partially fought/undone by Leaflet's own
+  // autoPan reacting to that same move (confirmed directly: a manual
+  // panBy([0,-220]) only netted +120px of actual on-screen movement
+  // with autoPan left on). On iOS this combination of two competing
+  // pan systems reliably left the popup positioned off-screen once both
+  // settled, reading as the popup just vanishing once the screen
+  // stopped moving (ROB-119). Disabling Leaflet's version and doing all
+  // of this ourselves — both the map's own edges (its job before) and
+  // the .map-controls overlay it doesn't know about (ROB-117) — avoids
+  // the conflict entirely instead of trying to out-time it.
+  const POPUP_PADDING = 12;
+
   map.on('popupopen', (event) => {
-    // Leaflet's own autopan (and the popup's open animation) hasn't
-    // necessarily finished laying out the DOM at the instant this event
-    // fires — measuring synchronously here can read a transient,
-    // not-yet-final position. Deferring lets layout settle first, so the
-    // overlap measurement reflects where the popup actually ends up.
-    // setTimeout rather than requestAnimationFrame: rAF is tied to the
-    // paint loop and won't fire while the tab is backgrounded, which a
-    // popup-opening interaction shouldn't depend on.
     setTimeout(() => {
       const popupEl = event.popup.getElement();
       const controls = document.querySelector('.map-controls');
-      if (!popupEl || !controls) return;
+      if (!popupEl) return;
 
       const popupRect = popupEl.getBoundingClientRect();
-      const controlsRect = controls.getBoundingClientRect();
-      const overlap = controlsRect.bottom - popupRect.top;
-      if (overlap > 0) {
-        map.panBy([0, -(overlap + 12)], { animate: true });
+      const mapRect = map.getContainer().getBoundingClientRect();
+      const topBound = controls ? Math.max(mapRect.top, controls.getBoundingClientRect().bottom) : mapRect.top;
+
+      // panBy's sign convention, confirmed empirically: a negative
+      // component moves page content down/right; positive moves it
+      // up/left.
+      let dy = 0;
+      if (popupRect.top < topBound) {
+        dy = -(topBound - popupRect.top + POPUP_PADDING);
+      } else if (popupRect.bottom > mapRect.bottom) {
+        dy = popupRect.bottom - mapRect.bottom + POPUP_PADDING;
       }
-    }, 0);
+
+      let dx = 0;
+      if (popupRect.left < mapRect.left) {
+        dx = -(mapRect.left - popupRect.left + POPUP_PADDING);
+      } else if (popupRect.right > mapRect.right) {
+        dx = popupRect.right - mapRect.right + POPUP_PADDING;
+      }
+
+      if (dx !== 0 || dy !== 0) {
+        // animate: false — an animated pan here turned out to depend
+        // on requestAnimationFrame to actually progress, and there are
+        // real conditions (reduced-motion settings, throttled
+        // background tabs, certain mobile browser states) where rAF
+        // doesn't reliably drive a transition forward. Since this
+        // correction only fires when the popup would otherwise be
+        // genuinely unreadable, landing it in the right place
+        // instantly and deterministically matters more than animating
+        // the hop smoothly.
+        map.panBy([dx, dy], { animate: false });
+      }
+    }, 50);
   });
 
   window.addEventListener(LISTING_FILTERS_EVENT, (event) => {
