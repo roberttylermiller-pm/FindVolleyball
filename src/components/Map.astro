@@ -274,6 +274,18 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   const map = L.map('map', { zoomControl: false }).setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
+  // iOS Safari's bottom toolbar auto-hides on scroll/interaction after
+  // the page has already loaded, growing the visible viewport (and, via
+  // the dvh-based height in global.css, the #map container) — but
+  // Leaflet only renders tiles for the container size it last measured,
+  // so the newly-revealed area stays blank/grey until something tells
+  // it to re-measure. Same fix as Header.astro's --header-height sync:
+  // watch the container itself rather than guess when this happens.
+  const mapContainer = document.getElementById('map');
+  if (mapContainer) {
+    new ResizeObserver(() => map.invalidateSize()).observe(mapContainer);
+  }
+
   // Re-centers on the visitor's own location once geolocation resolves
   // — listings now span more than the original seed region, so the
   // fixed regional default is a worse first view than it used to be
