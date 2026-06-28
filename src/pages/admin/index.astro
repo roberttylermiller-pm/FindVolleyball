@@ -566,6 +566,7 @@ const DAYS: Array<{ value: string; label: string }> = [
 
   interface Report {
     id: string;
+    listing_id: string;
     note: string;
     created_at: string;
     listings: { name: string | null; type: string; status: string } | null;
@@ -675,6 +676,7 @@ const DAYS: Array<{ value: string; label: string }> = [
             ${report.note}
           </div>
           <div class="listing-actions">
+            <button data-action="edit" data-id="${report.listing_id}">View/Edit listing</button>
             <button data-action="archive-report" data-id="${report.id}">Archive</button>
           </div>
         </div>`,
@@ -950,11 +952,17 @@ const DAYS: Array<{ value: string; label: string }> = [
   });
 
   reportsList?.addEventListener('click', async (event) => {
-    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action="archive-report"]');
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]');
     if (!button) return;
 
+    const { action, id } = button.dataset;
+    if (action === 'edit') {
+      handleEditClick(id);
+      return;
+    }
+
     if (statusMessage) statusMessage.textContent = '';
-    const response = await apiFetch(`/api/admin/reports/${button.dataset.id}/archive`, { method: 'POST' });
+    const response = await apiFetch(`/api/admin/reports/${id}/archive`, { method: 'POST' });
     const failed = await reportIfFailed(response, 'Failed to archive report.');
     if (!failed) loadDashboard();
   });
