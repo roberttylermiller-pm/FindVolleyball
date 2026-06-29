@@ -22,6 +22,7 @@ interface NominatimAddress {
   city?: string;
   town?: string;
   village?: string;
+  county?: string;
   state?: string;
   postcode?: string;
 }
@@ -77,7 +78,14 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
   const neighborhood = rawNeighborhood
     ? rawNeighborhood.replace(/\s*Neighborhood Council District$/i, '').trim() || null
     : null;
-  const city = address.city ?? address.town ?? address.village;
+  // Falls back to the county when Nominatim has no city/town/village at
+  // all — common for unincorporated areas (e.g. a CDP like "Columbine,
+  // CO" has only a suburb + county tag, no city), which previously
+  // failed reverse geocoding entirely (ROB-127). Stripped of the
+  // trailing " County" since that reads oddly as a city name on its
+  // own ("Jefferson", not "Jefferson County").
+  const county = address.county?.replace(/\s*County$/i, '').trim() || null;
+  const city = address.city ?? address.town ?? address.village ?? county;
 
   if (!city) {
     throw new Error(`Reverse geocode returned no usable city for ${lat},${lng}`);
