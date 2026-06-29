@@ -189,7 +189,9 @@ const MINUTE_MARKS = [
   let onConfirm: ((value: string) => void) | null = null;
   let hour12: number | null = null;
   let minute: number | null = null;
-  let period: Period = 'AM';
+  // Most meetups are evening events — defaulting to PM saves a tap on
+  // the common case (ROB-125).
+  let period: Period = 'PM';
 
   const modal = document.querySelector<HTMLDialogElement>('#clock-picker-modal');
   const face = document.querySelector<HTMLDivElement>('#clock-picker-face');
@@ -235,7 +237,7 @@ const MINUTE_MARKS = [
     if (!value) {
       hour12 = null;
       minute = null;
-      period = 'AM';
+      period = 'PM';
       return;
     }
     const [hStr, mStr] = value.split(':');
