@@ -9,7 +9,7 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     <div class="submit-tabs" role="tablist">
       <button type="button" class="submit-tab" data-tab="recurring" role="tab" aria-selected="true">Recurring Meetups</button>
       <button type="button" class="submit-tab" data-tab="tournament" role="tab" aria-selected="false">Tournament</button>
-      <!-- League tab hidden until ROB-116 ships -->
+      <button type="button" class="submit-tab" data-tab="league" role="tab" aria-selected="false">League</button>
     </div>
 
     <h1 id="submit-heading">Add a recurring meetup</h1>
@@ -39,6 +39,19 @@ import DayTimePicker from '../components/DayTimePicker.astro';
           <label>
             End date *
             <input type="date" name="end_date" />
+          </label>
+        </div>
+      </div>
+
+      <div class="league-only" hidden>
+        <div class="field-row">
+          <label>
+            Start month *
+            <input type="month" name="start_month" />
+          </label>
+          <label>
+            End month *
+            <input type="month" name="end_month" />
           </label>
         </div>
       </div>
@@ -198,6 +211,7 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     }
 
     .tournament-only[hidden],
+    .league-only[hidden],
     .recurring-only[hidden] {
       display: none;
     }
@@ -222,6 +236,7 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     input[type="text"],
     input[type="url"],
     input[type="date"],
+    input[type="month"],
     select,
     textarea {
       padding: 0.5rem;
@@ -283,6 +298,7 @@ import DayTimePicker from '../components/DayTimePicker.astro';
   const TAB_HEADINGS: Record<string, string> = {
     recurring: 'Add a recurring meetup',
     tournament: 'Add a listing for an upcoming tournament',
+    league: 'Add a listing for a league',
   };
 
   let activeTab = 'recurring';
@@ -303,6 +319,9 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     for (const el of document.querySelectorAll<HTMLElement>('.tournament-only')) {
       el.hidden = tab !== 'tournament';
     }
+    for (const el of document.querySelectorAll<HTMLElement>('.league-only')) {
+      el.hidden = tab !== 'league';
+    }
     for (const el of document.querySelectorAll<HTMLElement>('.recurring-only')) {
       el.hidden = tab !== 'recurring';
     }
@@ -311,6 +330,11 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     const endDateInput = form?.elements.namedItem('end_date') as HTMLInputElement | null;
     if (startDateInput) startDateInput.required = tab === 'tournament';
     if (endDateInput) endDateInput.required = tab === 'tournament';
+
+    const startMonthInput = form?.elements.namedItem('start_month') as HTMLInputElement | null;
+    const endMonthInput = form?.elements.namedItem('end_month') as HTMLInputElement | null;
+    if (startMonthInput) startMonthInput.required = tab === 'league';
+    if (endMonthInput) endMonthInput.required = tab === 'league';
   }
 
   for (const tabBtn of document.querySelectorAll<HTMLButtonElement>('.submit-tab')) {
@@ -341,12 +365,28 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     if (authNotice) authNotice.hidden = Boolean(currentUserId);
   });
 
+  // "YYYY-MM" (native <input type="month"> format) -> the first/last
+  // calendar day of that month, as plain "YYYY-MM-DD" — the API only
+  // ever deals in start_date/end_date, regardless of which tab's UI
+  // produced them. Day 0 of the *next* month is a standard JS trick for
+  // "last day of this month" that avoids hardcoding days-per-month.
+  function firstDayOfMonth(month: string): string {
+    return `${month}-01`;
+  }
+  function lastDayOfMonth(month: string): string {
+    const [year, monthNum] = month.split('-').map(Number);
+    const lastDay = new Date(year, monthNum, 0).getDate();
+    return `${month}-${String(lastDay).padStart(2, '0')}`;
+  }
+
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!currentUserId) return;
 
     const formData = new FormData(form);
     const isTournament = activeTab === 'tournament';
+    const isLeague = activeTab === 'league';
+    const isDatedListing = isTournament || isLeague;
 
     // The lat/lng hidden inputs default to empty strings, and
     // Number('') is 0 (not NaN) — so a listing with no address picked
@@ -366,11 +406,24 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       return;
     }
 
-    const startDate = (formData.get('start_date') as string) || null;
-    const endDate = (formData.get('end_date') as string) || null;
-    if (isTournament && (!startDate || !endDate || endDate < startDate)) {
-      if (message) message.textContent = 'Please enter a valid start and end date for the tournament.';
-      return;
+    let startDate: string | null = null;
+    let endDate: string | null = null;
+    if (isTournament) {
+      startDate = (formData.get('start_date') as string) || null;
+      endDate = (formData.get('end_date') as string) || null;
+      if (!startDate || !endDate || endDate < startDate) {
+        if (message) message.textContent = 'Please enter a valid start and end date for the tournament.';
+        return;
+      }
+    } else if (isLeague) {
+      const startMonth = (formData.get('start_month') as string) || null;
+      const endMonth = (formData.get('end_month') as string) || null;
+      if (!startMonth || !endMonth || endMonth < startMonth) {
+        if (message) message.textContent = 'Please enter a valid start and end month for the league.';
+        return;
+      }
+      startDate = firstDayOfMonth(startMonth);
+      endDate = lastDayOfMonth(endMonth);
     }
 
     const cost = formData.get('cost');
@@ -392,30 +445,30 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     const payload = {
       website: (formData.get('website') as string) || '',
       listing_kind: activeTab,
-      start_date: isTournament ? startDate : null,
-      end_date: isTournament ? endDate : null,
+      start_date: isDatedListing ? startDate : null,
+      end_date: isDatedListing ? endDate : null,
       type: formData.get('type') as NewListing['type'],
       cost: cost === '' ? null : (cost as NewListing['cost']),
       lat: Number(formData.get('lat')),
       lng: Number(formData.get('lng')),
       submitted_address: (formData.get('address_raw') as string) || null,
       google_maps_url: (formData.get('google_maps_url') as string) || null,
-      // Tournaments don't recur on weekly days — sent as empty rather
-      // than reading the (hidden, untouched) DayTimePicker fields.
-      days_times: isTournament ? [] : readDaysTimes(formData),
+      // Tournaments/leagues don't recur on weekly days — sent as empty
+      // rather than reading the (hidden, untouched) DayTimePicker fields.
+      days_times: isDatedListing ? [] : readDaysTimes(formData),
       signup_required: signupRequired === '' ? null : signupRequired === 'yes',
       name: (formData.get('name') as string) || null,
       external_link: (formData.get('external_link') as string) || null,
       min_skill_level: (formData.get('min_skill_level') as NewListing['min_skill_level']) || null,
-      // Not asked of tournament submitters (ROB-113's field list omits
-      // them for that tab) — always null for that kind regardless of
-      // these radios' default-checked state.
-      equipment_supplied: isTournament ? null : equipmentSupplied === '' ? null : equipmentSupplied === 'yes',
+      // Not asked of tournament/league submitters (their field lists
+      // omit these) — always null for those kinds regardless of these
+      // radios' default-checked state.
+      equipment_supplied: isDatedListing ? null : equipmentSupplied === '' ? null : equipmentSupplied === 'yes',
       payment_types: (formData.get('payment_types') as string) || null,
-      team_required: isTournament ? null : teamRequired === '' ? null : teamRequired === 'yes',
+      team_required: isDatedListing ? null : teamRequired === '' ? null : teamRequired === 'yes',
       notes: (formData.get('notes') as string) || null,
-      // Visibility toggle isn't shown for tournaments — always public.
-      visibility: (isTournament ? 'public' : formData.get('visibility')) as NewListing['visibility'],
+      // Visibility toggle isn't shown for tournaments/leagues — always public.
+      visibility: (isDatedListing ? 'public' : formData.get('visibility')) as NewListing['visibility'],
       photo_url: photoUrl,
     };
 

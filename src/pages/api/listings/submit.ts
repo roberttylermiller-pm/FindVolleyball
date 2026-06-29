@@ -13,10 +13,7 @@ const COST_TYPES = new Set(['free', 'paid']);
 const VISIBILITIES = new Set(['public', 'private']);
 const SKILL_LEVELS = new Set(['C', 'B', 'BB', 'A', 'AA']);
 const DAYS = new Set(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']);
-// 'league' isn't submittable yet (ROB-116) even though the DB allows
-// it as a value — no submission flow exists for it, so accepting it
-// here would create rows the UI has no way to have produced.
-const LISTING_KINDS = new Set(['recurring', 'tournament']);
+const LISTING_KINDS = new Set(['recurring', 'tournament', 'league']);
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
 function isValidDaysTimes(value: unknown): value is DayTime[] {
@@ -66,12 +63,15 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'Invalid days_times' }), { status: 400 });
   }
 
-  // Tournaments are one-off dated events rather than weekly recurring
-  // meetups (ROB-113) — a date range is required instead of days_times,
-  // which the submit form sends as an empty array for this kind.
+  // Tournaments and leagues are dated events rather than weekly
+  // recurring meetups (ROB-113, ROB-116) — a date range is required
+  // instead of days_times, which the submit form sends as an empty
+  // array for these kinds. Leagues are submitted as whole months on
+  // the client, already converted to first/last-day-of-month dates
+  // before reaching here, so both kinds validate identically.
   let startDate: string | null = null;
   let endDate: string | null = null;
-  if (listingKind === 'tournament') {
+  if (listingKind === 'tournament' || listingKind === 'league') {
     if (
       typeof body.start_date !== 'string' ||
       typeof body.end_date !== 'string' ||
@@ -79,7 +79,7 @@ export const POST: APIRoute = async ({ request }) => {
       !DATE_ONLY.test(body.end_date) ||
       body.end_date < body.start_date
     ) {
-      return new Response(JSON.stringify({ error: 'A tournament needs a valid start and end date' }), { status: 400 });
+      return new Response(JSON.stringify({ error: `A ${listingKind} needs a valid start and end date` }), { status: 400 });
     }
     startDate = body.start_date;
     endDate = body.end_date;

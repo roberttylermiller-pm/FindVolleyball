@@ -82,6 +82,7 @@ const DAYS: Array<{ value: string; label: string }> = [
           <legend>Kind</legend>
           <label><input type="radio" name="listing_kind" value="recurring" /> Recurring</label>
           <label><input type="radio" name="listing_kind" value="tournament" /> Tournament</label>
+          <label><input type="radio" name="listing_kind" value="league" /> League</label>
         </fieldset>
         <label>
           Start date
@@ -539,7 +540,8 @@ const DAYS: Array<{ value: string; label: string }> = [
 
   function tournamentDateLine(listing: FullListing): string {
     if (!listing.start_date || !listing.end_date) return '';
-    return `<div class="listing-submitted-address">🏆 ${formatDateRange(listing.start_date, listing.end_date)}</div>`;
+    const emoji = listing.listing_kind === 'league' ? '🏟️' : '🏆';
+    return `<div class="listing-submitted-address">${emoji} ${formatDateRange(listing.start_date, listing.end_date)}</div>`;
   }
 
   function formatTime12h(value: string): string {
