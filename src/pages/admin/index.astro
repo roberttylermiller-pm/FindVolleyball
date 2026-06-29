@@ -84,14 +84,16 @@ const DAYS: Array<{ value: string; label: string }> = [
           <label><input type="radio" name="listing_kind" value="tournament" /> Tournament</label>
           <label><input type="radio" name="listing_kind" value="league" /> League</label>
         </fieldset>
-        <label>
-          Start date
-          <input type="date" name="start_date" />
-        </label>
-        <label>
-          End date
-          <input type="date" name="end_date" />
-        </label>
+        <div class="field-row kind-conditional" data-kind-show="tournament,league">
+          <label>
+            Start date
+            <input type="date" name="start_date" />
+          </label>
+          <label>
+            End date
+            <input type="date" name="end_date" />
+          </label>
+        </div>
       </div>
 
       <div class="field-row">
@@ -138,7 +140,7 @@ const DAYS: Array<{ value: string; label: string }> = [
         </label>
       </div>
 
-      <fieldset class="day-time-edit">
+      <fieldset class="day-time-edit kind-conditional" data-kind-show="recurring,league">
         <legend>Days & Times</legend>
         <div class="day-chips">
           {
@@ -178,19 +180,21 @@ const DAYS: Array<{ value: string; label: string }> = [
           <label><input type="radio" name="signup_required" value="no" /> No</label>
         </fieldset>
 
-        <fieldset>
-          <legend>Equipment supplied</legend>
-          <label><input type="radio" name="equipment_supplied" value="" /> Not specified</label>
-          <label><input type="radio" name="equipment_supplied" value="yes" /> Yes</label>
-          <label><input type="radio" name="equipment_supplied" value="no" /> No</label>
-        </fieldset>
+        <div class="field-row kind-conditional" data-kind-show="recurring">
+          <fieldset>
+            <legend>Equipment supplied</legend>
+            <label><input type="radio" name="equipment_supplied" value="" /> Not specified</label>
+            <label><input type="radio" name="equipment_supplied" value="yes" /> Yes</label>
+            <label><input type="radio" name="equipment_supplied" value="no" /> No</label>
+          </fieldset>
 
-        <fieldset>
-          <legend>Team required</legend>
-          <label><input type="radio" name="team_required" value="" /> Not specified</label>
-          <label><input type="radio" name="team_required" value="yes" /> Yes</label>
-          <label><input type="radio" name="team_required" value="no" /> No</label>
-        </fieldset>
+          <fieldset>
+            <legend>Team required</legend>
+            <label><input type="radio" name="team_required" value="" /> Not specified</label>
+            <label><input type="radio" name="team_required" value="yes" /> Yes</label>
+            <label><input type="radio" name="team_required" value="no" /> No</label>
+          </fieldset>
+        </div>
       </div>
 
       <label>
@@ -377,6 +381,10 @@ const DAYS: Array<{ value: string; label: string }> = [
       display: flex;
       flex-wrap: wrap;
       gap: 1rem;
+    }
+
+    .kind-conditional[hidden] {
+      display: none;
     }
 
     .field-hint {
@@ -765,6 +773,24 @@ const DAYS: Array<{ value: string; label: string }> = [
     if (input) input.checked = true;
   }
 
+  // Field groups that don't apply to every kind (e.g. a tournament's
+  // fixed start/end date vs. a recurring meetup's weekly schedule) carry
+  // a data-kind-show list of the kinds they're relevant for — kept data-
+  // driven rather than a kind-by-kind if/else so adding a new kind-
+  // specific group later is just one more attribute, not new branches.
+  function applyKindVisibility(kind: string) {
+    for (const el of editForm?.querySelectorAll<HTMLElement>('[data-kind-show]') ?? []) {
+      const allowedKinds = el.dataset.kindShow?.split(',') ?? [];
+      el.hidden = !allowedKinds.includes(kind);
+    }
+  }
+
+  for (const radio of editForm?.querySelectorAll<HTMLInputElement>('input[name="listing_kind"]') ?? []) {
+    radio.addEventListener('change', () => {
+      if (radio.checked) applyKindVisibility(radio.value);
+    });
+  }
+
   function openEditDialog(listing: FullListing) {
     if (!editForm || !editDialog) return;
     editForm.reset();
@@ -776,6 +802,7 @@ const DAYS: Array<{ value: string; label: string }> = [
     setRadioValue('cost', listing.cost ?? '');
     setRadioValue('visibility', listing.visibility);
     setRadioValue('listing_kind', listing.listing_kind);
+    applyKindVisibility(listing.listing_kind);
     (editForm.elements.namedItem('start_date') as HTMLInputElement).value = listing.start_date ?? '';
     (editForm.elements.namedItem('end_date') as HTMLInputElement).value = listing.end_date ?? '';
     (editForm.elements.namedItem('lat') as HTMLInputElement).value = String(listing.lat);
@@ -880,6 +907,9 @@ const DAYS: Array<{ value: string; label: string }> = [
     const equipmentSupplied = formData.get('equipment_supplied');
     const teamRequired = formData.get('team_required');
     const days = formData.getAll('days') as string[];
+    const listingKind = formData.get('listing_kind') as string;
+    const isTournament = listingKind === 'tournament';
+    const isDatedListing = isTournament || listingKind === 'league';
 
     const daysTimes: DayTime[] = days.map((day) => ({
       day: day as DayTime['day'],
@@ -892,9 +922,13 @@ const DAYS: Array<{ value: string; label: string }> = [
       type: formData.get('type'),
       cost: cost === '' ? null : cost,
       visibility: formData.get('visibility'),
-      listing_kind: formData.get('listing_kind'),
-      start_date: (formData.get('start_date') as string) || null,
-      end_date: (formData.get('end_date') as string) || null,
+      listing_kind: listingKind,
+      // Kind-conditional fields are nulled/cleared here rather than
+      // trusted from the form directly — switching the Kind radio hides
+      // a group without clearing its inputs, so a stale value left over
+      // from before the switch could otherwise still get saved.
+      start_date: isDatedListing ? (formData.get('start_date') as string) || null : null,
+      end_date: isDatedListing ? (formData.get('end_date') as string) || null : null,
       lat: Number(formData.get('lat')),
       lng: Number(formData.get('lng')),
       submitted_address: (formData.get('submitted_address') as string) || null,
@@ -902,10 +936,10 @@ const DAYS: Array<{ value: string; label: string }> = [
       google_maps_url: (formData.get('google_maps_url') as string) || null,
       city: (formData.get('city') as string) || null,
       neighborhood: (formData.get('neighborhood') as string) || null,
-      days_times: daysTimes,
+      days_times: isTournament ? [] : daysTimes,
       signup_required: signupRequired === '' ? null : signupRequired === 'yes',
-      equipment_supplied: equipmentSupplied === '' ? null : equipmentSupplied === 'yes',
-      team_required: teamRequired === '' ? null : teamRequired === 'yes',
+      equipment_supplied: listingKind === 'recurring' ? (equipmentSupplied === '' ? null : equipmentSupplied === 'yes') : null,
+      team_required: listingKind === 'recurring' ? (teamRequired === '' ? null : teamRequired === 'yes') : null,
       min_skill_level: (formData.get('min_skill_level') as string) || null,
       external_link: (formData.get('external_link') as string) || null,
       payment_types: (formData.get('payment_types') as string) || null,

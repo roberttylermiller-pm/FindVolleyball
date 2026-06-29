@@ -63,7 +63,7 @@ import DayTimePicker from '../components/DayTimePicker.astro';
         <span class="field-hint">If the address search above doesn't find the exact spot, paste the venue's Google Maps link here instead.</span>
       </label>
 
-      <div class="recurring-only">
+      <div class="days-time-section">
         <DayTimePicker />
       </div>
 
@@ -216,7 +216,8 @@ import DayTimePicker from '../components/DayTimePicker.astro';
 
     .tournament-only[hidden],
     .league-only[hidden],
-    .recurring-only[hidden] {
+    .recurring-only[hidden],
+    .days-time-section[hidden] {
       display: none;
     }
 
@@ -328,6 +329,12 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     }
     for (const el of document.querySelectorAll<HTMLElement>('.recurring-only')) {
       el.hidden = tab !== 'recurring';
+    }
+    // Leagues recur on a weekly schedule too, just like a meetup — only
+    // a tournament's fixed start/end date makes a day-of-week schedule
+    // not apply.
+    for (const el of document.querySelectorAll<HTMLElement>('.days-time-section')) {
+      el.hidden = tab === 'tournament';
     }
 
     const startDateInput = form?.elements.namedItem('start_date') as HTMLInputElement | null;
@@ -462,9 +469,11 @@ import DayTimePicker from '../components/DayTimePicker.astro';
       lng: Number(formData.get('lng')),
       submitted_address: (formData.get('address_raw') as string) || null,
       google_maps_url: (formData.get('google_maps_url') as string) || null,
-      // Tournaments/leagues don't recur on weekly days — sent as empty
-      // rather than reading the (hidden, untouched) DayTimePicker fields.
-      days_times: isDatedListing ? [] : readDaysTimes(formData),
+      // A tournament is a single dated event, not a weekly schedule —
+      // sent as empty rather than reading the (hidden, untouched)
+      // DayTimePicker fields. A league can have both a date range and an
+      // optional weekly day, so it still reads the picker.
+      days_times: isTournament ? [] : readDaysTimes(formData),
       signup_required: signupRequired === '' ? null : signupRequired === 'yes',
       name: (formData.get('name') as string) || null,
       external_link: (formData.get('external_link') as string) || null,
