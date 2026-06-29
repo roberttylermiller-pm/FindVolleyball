@@ -282,8 +282,8 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   import { fetchApprovedListings } from '../lib/listings/fetchApproved';
   import { LISTING_FILTERS_EVENT, defaultListingFilters, listingMatchesFilters } from '../lib/listings/filters';
   import type { ListingFilters } from '../lib/listings/filters';
-  import { MAP_PAN_TO_EVENT } from '../lib/map/events';
-  import type { MapPanToDetail } from '../lib/map/events';
+  import { MAP_PAN_TO_EVENT, LISTING_RESULTS_EVENT, LISTING_SELECT_EVENT } from '../lib/map/events';
+  import type { MapPanToDetail, ListingSelectDetail } from '../lib/map/events';
   import { buildListingPopupContent } from '../lib/listings/popup';
   import type { Listing } from '../types/listing';
 
@@ -339,11 +339,17 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   map.addLayer(clusterGroup);
 
   let allListings: Listing[] = [];
+  // Looked up when ListView.astro's LISTING_SELECT_EVENT fires — kept in
+  // sync with clusterGroup's contents inside renderMarkers below.
+  const markersById = new Map<string, L.Marker>();
 
   function renderMarkers(filters: ListingFilters) {
     clusterGroup.clearLayers();
+    markersById.clear();
+    const visible: Listing[] = [];
     for (const listing of allListings) {
       if (!listingMatchesFilters(listing, filters)) continue;
+      visible.push(listing);
       const marker = L.marker([listing.lat, listing.lng], {
         icon: createVolleyballIcon(listing.type, listing.listing_kind),
         opacity: listing.decayed ? 0.5 : 1,
@@ -352,7 +358,12 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
       // Leaflet's own version of this can't be left enabled (ROB-119).
       marker.bindPopup(buildListingPopupContent(listing), { className: 'volleyball-popup', maxWidth: 260, autoPan: false });
       clusterGroup.addLayer(marker);
+      markersById.set(listing.id, marker);
     }
+    // ListView.astro's list pane (ROB-131) renders from this rather than
+    // fetching/filtering its own copy of the same data — keeps the list
+    // and the map showing exactly the same set, with one fetch.
+    window.dispatchEvent(new CustomEvent<Listing[]>(LISTING_RESULTS_EVENT, { detail: visible }));
   }
 
   // Leaflet's built-in popup autoPan (disabled above, see bindPopup)
@@ -447,6 +458,17 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
       [south, west],
       [north, east],
     ]);
+  });
+
+  window.addEventListener(LISTING_SELECT_EVENT, (event) => {
+    const { listingId } = (event as CustomEvent<ListingSelectDetail>).detail;
+    const marker = markersById.get(listingId);
+    if (!marker) return;
+    // zoomToShowLayer handles the case where the marker is currently
+    // balled up in a cluster — same zoom/spiderfy-then-settle dance the
+    // popupopen correction above already waits out, just driven from a
+    // list click instead of a direct marker click.
+    clusterGroup.zoomToShowLayer(marker, () => marker.openPopup());
   });
 
   try {

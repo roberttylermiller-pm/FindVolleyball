@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Map from '../components/Map.astro';
 import Filters from '../components/Filters.astro';
+import ListView from '../components/ListView.astro';
 import LocationSearch from '../components/LocationSearch.astro';
 import WelcomeModal from '../components/WelcomeModal.astro';
 import Toast from '../components/Toast.astro';
@@ -25,12 +26,24 @@ import Toast from '../components/Toast.astro';
         >
           Filters ▾
         </button>
+        <!-- List view toggle (ROB-131) — collapsed by default, unlike
+             filters-toggle this is shown at every screen width since
+             the list pane is opt-in everywhere, not a narrow-screen
+             space-saving measure. -->
+        <button id="list-toggle" type="button" class="list-toggle" aria-expanded="false" aria-controls="list-panel">
+          List
+        </button>
       </div>
       <div id="filters-panel" class="filters-panel">
         <Filters />
       </div>
     </div>
-    <Map />
+    <div class="map-layout">
+      <div class="map-area">
+        <Map />
+      </div>
+      <ListView />
+    </div>
   </main>
 </BaseLayout>
 
@@ -39,6 +52,18 @@ import Toast from '../components/Toast.astro';
     position: relative;
     flex: 1;
     min-height: 0;
+  }
+
+  .map-layout {
+    display: flex;
+    height: 100%;
+  }
+
+  .map-area {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
   }
 
   .map-controls {
@@ -52,6 +77,43 @@ import Toast from '../components/Toast.astro';
     justify-content: space-between;
     align-items: flex-start;
     gap: 0.75rem;
+    transition: right 0.2s ease;
+  }
+
+  /* Leaves room for the expanded list pane instead of the search/filter
+     bar floating over the top of it (ROB-131) — only on wider screens,
+     where the list pane is a side-by-side column rather than a
+     full-width replacement for the map (see ListView.astro's own
+     breakpoint). */
+  @media (min-width: 768px) {
+    main:has(#list-panel.expanded) .map-controls {
+      right: calc(24rem + 1rem);
+    }
+  }
+
+  .list-toggle {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
+    background: #1a1a1a;
+    border: none;
+    border-radius: 0.4rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .list-toggle[aria-expanded="true"] {
+    background: var(--color-accent);
+  }
+
+  /* Shown at every width (unlike .filters-toggle), so it needs the same
+     flex-shrink: 0 floor protection here too once the row stops
+     wrapping below. */
+  @media (max-width: 480px) {
+    .list-toggle {
+      flex-shrink: 0;
+    }
   }
 
   .map-controls-row {
@@ -118,5 +180,19 @@ import Toast from '../components/Toast.astro';
     const expanded = filtersPanel?.classList.toggle('expanded') ?? false;
     filtersToggle.setAttribute('aria-expanded', String(expanded));
     filtersToggle.textContent = expanded ? 'Filters ▴' : 'Filters ▾';
+  });
+
+  // List view toggle (ROB-131) — collapsed by default. Map.astro's own
+  // ResizeObserver on #map already calls invalidateSize() whenever that
+  // container's size changes, which the .map-area flex item shrinking
+  // to make room for the expanded panel triggers on its own — no extra
+  // handling needed here for that part.
+  const listToggle = document.querySelector<HTMLButtonElement>('#list-toggle');
+  const listPanel = document.querySelector<HTMLElement>('#list-panel');
+
+  listToggle?.addEventListener('click', () => {
+    const expanded = listPanel?.classList.toggle('expanded') ?? false;
+    listToggle.setAttribute('aria-expanded', String(expanded));
+    listToggle.textContent = expanded ? 'Map' : 'List';
   });
 </script>
