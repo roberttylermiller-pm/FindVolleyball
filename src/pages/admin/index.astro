@@ -18,6 +18,12 @@ const DAYS: Array<{ value: string; label: string }> = [
     <p id="status-message" role="status"></p>
 
     <section id="admin-content" hidden>
+      <div class="admin-tabs" role="tablist">
+        <button type="button" class="admin-tab" data-kind="recurring" role="tab" aria-selected="true">Recurring</button>
+        <button type="button" class="admin-tab" data-kind="tournament" role="tab" aria-selected="false">Tournament</button>
+        <button type="button" class="admin-tab" data-kind="league" role="tab" aria-selected="false">League</button>
+      </div>
+
       <section>
         <h2>Pending review</h2>
         <div id="pending-list"></div>
@@ -260,6 +266,28 @@ const DAYS: Array<{ value: string; label: string }> = [
       justify-content: space-between;
       gap: 1rem;
       margin-bottom: 0.5rem;
+    }
+
+    .admin-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .admin-tab {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #666;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+
+    .admin-tab[aria-selected="true"] {
+      color: var(--color-accent);
+      border-bottom-color: var(--color-accent);
     }
 
     .sort-label {
@@ -579,16 +607,20 @@ const DAYS: Array<{ value: string; label: string }> = [
     listing_id: string;
     note: string;
     created_at: string;
-    listings: { name: string | null; type: string; status: string } | null;
+    listings: { name: string | null; type: string; status: string; listing_kind: string } | null;
   }
 
   // Looked up by id when "Edit" is clicked — both dashboard sections
   // already fetch full rows (select('*')), so no extra request needed.
   const listingsById = new Map<string, FullListing>();
 
-  // Cached so the sort dropdown can re-render client-side instead of
-  // re-fetching — the full list is already in memory either way.
+  // Cached so the sort dropdown and the kind tabs (ROB-124) can
+  // re-render client-side instead of re-fetching — the full lists are
+  // already in memory either way.
   let allListingsCache: FullListing[] = [];
+  let pendingCache: FullListing[] = [];
+  let reportsCache: Report[] = [];
+  let activeKind = 'recurring';
   const allListingsSort = document.querySelector<HTMLSelectElement>('#all-listings-sort');
 
   function sortListings(listings: FullListing[], sortBy: string): FullListing[] {
@@ -750,16 +782,40 @@ const DAYS: Array<{ value: string; label: string }> = [
       listingsById.set(listing.id, listing);
     }
 
+    pendingCache = pending ?? [];
+    reportsCache = reports ?? [];
     allListingsCache = all ?? [];
 
-    renderPending(pending ?? []);
-    renderReports(reports ?? []);
-    renderAllListings(sortListings(allListingsCache, allListingsSort?.value ?? 'date-desc'));
+    renderDashboard();
   }
 
-  allListingsSort?.addEventListener('change', () => {
-    renderAllListings(sortListings(allListingsCache, allListingsSort.value));
-  });
+  // Re-renders all three sections from the cached fetches, filtered down
+  // to whichever Kind tab is active (ROB-124) — listings of different
+  // kinds have different relevant fields (a tournament's dates vs. a
+  // meetup's weekly days), so mixing them in one list got noisy as
+  // tournament/league listings were added.
+  function renderDashboard() {
+    renderPending(pendingCache.filter((listing) => listing.listing_kind === activeKind));
+    renderReports(reportsCache.filter((report) => report.listings?.listing_kind === activeKind));
+    renderAllListings(
+      sortListings(
+        allListingsCache.filter((listing) => listing.listing_kind === activeKind),
+        allListingsSort?.value ?? 'date-desc',
+      ),
+    );
+  }
+
+  for (const tabBtn of document.querySelectorAll<HTMLButtonElement>('.admin-tab')) {
+    tabBtn.addEventListener('click', () => {
+      activeKind = tabBtn.dataset.kind ?? 'recurring';
+      for (const btn of document.querySelectorAll<HTMLButtonElement>('.admin-tab')) {
+        btn.setAttribute('aria-selected', String(btn === tabBtn));
+      }
+      renderDashboard();
+    });
+  }
+
+  allListingsSort?.addEventListener('change', renderDashboard);
 
   // --- Edit dialog ---
 

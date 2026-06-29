@@ -15,7 +15,7 @@ export const GET: APIRoute = async ({ request }) => {
   // unprocessed instead of growing forever.
   const { data, error } = await supabaseAdmin
     .from('reports')
-    .select('id, listing_id, note, created_at, listings(name, type, status)')
+    .select('id, listing_id, note, created_at, listings(name, type, status, listing_kind)')
     .eq('archived', false)
     .order('created_at', { ascending: false });
 
