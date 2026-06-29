@@ -201,7 +201,7 @@
     if (countEl) countEl.textContent = `${listings.length} listing${listings.length === 1 ? '' : 's'}`;
 
     if (listings.length === 0) {
-      resultsEl.innerHTML = '<p class="list-empty">No listings match the current filters.</p>';
+      resultsEl.innerHTML = '<p class="list-empty">No listings in this area match the current filters — try zooming out.</p>';
       return;
     }
 

@@ -6,10 +6,14 @@ export interface MapPanToDetail {
   boundingBox: [south: number, north: number, west: number, east: number];
 }
 
-// Fired by Map.astro every time the marker set it actually rendered
-// changes (initial load or a filters change) — ListView.astro listens
-// so the list pane always shows exactly what's on the map, without a
-// second, independently-timed fetch of the same data.
+// Fired by Map.astro whenever the list pane's relevant result set
+// changes — a filters change, or the map panning/zooming enough to
+// move the (padded) viewport bounds — so ListView.astro can render
+// without a second, independently-timed fetch of the same data. Unlike
+// the markers themselves, this is scoped to roughly the visible map
+// area (ROB-131 follow-up) rather than every filter-matched listing
+// everywhere, since a list of mostly-elsewhere results next to a map
+// someone's actually looking at one city on isn't useful.
 export const LISTING_RESULTS_EVENT = 'listing-results-change';
 
 // Fired by ListView.astro when a list row is clicked — Map.astro

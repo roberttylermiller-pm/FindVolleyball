@@ -339,6 +339,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   map.addLayer(clusterGroup);
 
   let allListings: Listing[] = [];
+  let currentFilters: ListingFilters = defaultListingFilters();
   // Looked up when ListView.astro's LISTING_SELECT_EVENT fires — kept in
   // sync with clusterGroup's contents inside renderMarkers below.
   const markersById = new Map<string, L.Marker>();
@@ -346,10 +347,8 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   function renderMarkers(filters: ListingFilters) {
     clusterGroup.clearLayers();
     markersById.clear();
-    const visible: Listing[] = [];
     for (const listing of allListings) {
       if (!listingMatchesFilters(listing, filters)) continue;
-      visible.push(listing);
       const marker = L.marker([listing.lat, listing.lng], {
         icon: createVolleyballIcon(listing.type, listing.listing_kind),
         opacity: listing.decayed ? 0.5 : 1,
@@ -360,11 +359,41 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
       clusterGroup.addLayer(marker);
       markersById.set(listing.id, marker);
     }
-    // ListView.astro's list pane (ROB-131) renders from this rather than
+  }
+
+  // The list pane (ROB-131) only makes sense scoped to roughly where
+  // someone's actually looking at the map — showing every filter-
+  // matched listing nationwide regardless of pan/zoom (the markers
+  // themselves still do, that's normal map browsing) made for a list of
+  // mostly-irrelevant results whenever the visible area was a single
+  // city. Padded rather than the exact viewport (Robert's call) so a
+  // listing just off-screen, or panning slightly, doesn't make it
+  // flicker in and out of the list.
+  const LIST_BOUNDS_PAD_RATIO = 0.5;
+
+  function updateListResults() {
+    const paddedBounds = map.getBounds().pad(LIST_BOUNDS_PAD_RATIO);
+    const visible = allListings.filter(
+      (listing) => listingMatchesFilters(listing, currentFilters) && paddedBounds.contains([listing.lat, listing.lng]),
+    );
+    // ListView.astro's list pane renders from this rather than
     // fetching/filtering its own copy of the same data — keeps the list
-    // and the map showing exactly the same set, with one fetch.
+    // and the map showing the same underlying set, with one fetch.
     window.dispatchEvent(new CustomEvent<Listing[]>(LISTING_RESULTS_EVENT, { detail: visible }));
   }
+
+  // moveend/zoomend already only fire once Leaflet's own pan/zoom
+  // animation settles (not continuously during a drag), but a fitBounds
+  // or a quick scroll-wheel zoom can still fire a few of these in close
+  // succession — debounced so that doesn't mean recomputing the list
+  // (a filter() over every listing) several times for one user action.
+  let listUpdateTimer: ReturnType<typeof setTimeout> | undefined;
+  function scheduleListUpdate() {
+    clearTimeout(listUpdateTimer);
+    listUpdateTimer = setTimeout(updateListResults, 150);
+  }
+
+  map.on('moveend zoomend', scheduleListUpdate);
 
   // Leaflet's built-in popup autoPan (disabled above, see bindPopup)
   // re-runs on every subsequent map move while a popup is open, not
@@ -448,7 +477,9 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   });
 
   window.addEventListener(LISTING_FILTERS_EVENT, (event) => {
-    renderMarkers((event as CustomEvent<ListingFilters>).detail);
+    currentFilters = (event as CustomEvent<ListingFilters>).detail;
+    renderMarkers(currentFilters);
+    updateListResults();
   });
 
   window.addEventListener(MAP_PAN_TO_EVENT, (event) => {
@@ -473,7 +504,8 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
   try {
     allListings = await fetchApprovedListings();
-    renderMarkers(defaultListingFilters());
+    renderMarkers(currentFilters);
+    updateListResults();
   } catch (err) {
     console.error(err);
   }
