@@ -114,6 +114,25 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
     border-radius: 0.25rem;
   }
 
+  /* Icon-only kind differences on the map markers (🏐/🏆/🏟️) aren't
+     obvious to everyone, so the popup spells it out in words too. */
+  .listing-popup .popup-kind-badge {
+    padding: 0.1rem 0.4rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #1c1c1e;
+    background: #8ab4f8;
+    border-radius: 0.25rem;
+  }
+
+  .listing-popup .popup-kind-tournament {
+    background: #ffd166;
+  }
+
+  .listing-popup .popup-kind-league {
+    background: #8bd3a0;
+  }
+
   .listing-popup .popup-decayed-notice {
     margin-bottom: 0.4rem;
     padding: 0.35rem 0.5rem;

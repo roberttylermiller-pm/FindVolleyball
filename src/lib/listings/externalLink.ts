@@ -14,6 +14,11 @@ export function buildExternalLinkHref(value: string): string {
 // client registered — many don't — so the label shows the actual
 // address rather than a generic "Contact" word, since that's the part
 // that's actually useful if the click does nothing.
-export function getExternalLinkLabel(value: string): string {
-  return isEmailAddress(value) ? value : 'View this meetup';
+const LINK_LABEL_BY_KIND: Record<string, string> = {
+  tournament: 'View this tournament',
+  league: 'View this league',
+};
+
+export function getExternalLinkLabel(value: string, listingKind: string = 'recurring'): string {
+  return isEmailAddress(value) ? value : LINK_LABEL_BY_KIND[listingKind] ?? 'View this meetup';
 }

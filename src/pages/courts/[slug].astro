@@ -112,7 +112,7 @@ const structuredData = buildListingStructuredData(listing, Astro.url.href);
           target={isEmailAddress(listing.external_link) ? undefined : '_blank'}
           rel={isEmailAddress(listing.external_link) ? undefined : 'noopener noreferrer'}
         >
-          {getExternalLinkLabel(listing.external_link)}{!isEmailAddress(listing.external_link) && ' ↗'}
+          {getExternalLinkLabel(listing.external_link, listing.listing_kind)}{!isEmailAddress(listing.external_link) && ' ↗'}
         </a>
       </p>
     )}

@@ -2,6 +2,7 @@ import { formatDayTime } from './formatDayTime';
 import { formatDateRange } from './formatDateRange';
 import { capitalize } from '../text';
 import { formatListingTypeLabel } from './typeLabel';
+import { formatListingKindLabel } from './kindLabel';
 import { formatVisibilityLabel } from './visibility';
 import { isEmailAddress, buildExternalLinkHref, getExternalLinkLabel } from './externalLink';
 import { buildMapsHref, formatAddressDisplay } from './address';
@@ -28,6 +29,7 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
     ${listing.photo_url ? `<img class="popup-photo" src="${listing.photo_url}" alt="${title}" />` : ''}
     <div class="popup-title-row">
       <strong class="popup-title">${title}</strong>
+      <span class="popup-kind-badge popup-kind-${listing.listing_kind}">${formatListingKindLabel(listing.listing_kind)}</span>
       ${listing.decayed ? '<span class="popup-decayed">Decayed</span>' : ''}
     </div>
     ${
@@ -50,7 +52,7 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
     ${listing.notes ? `<div class="popup-notes">${listing.notes}</div>` : ''}
     ${
       listing.external_link
-        ? `<a class="popup-link" href="${buildExternalLinkHref(listing.external_link)}"${isEmailAddress(listing.external_link) ? '' : ' target="_blank" rel="noopener noreferrer"'}>${getExternalLinkLabel(listing.external_link)}${isEmailAddress(listing.external_link) ? '' : ' ↗'}</a>`
+        ? `<a class="popup-link" href="${buildExternalLinkHref(listing.external_link)}"${isEmailAddress(listing.external_link) ? '' : ' target="_blank" rel="noopener noreferrer"'}>${getExternalLinkLabel(listing.external_link, listing.listing_kind)}${isEmailAddress(listing.external_link) ? '' : ' ↗'}</a>`
         : ''
     }
     <div class="popup-votes">
