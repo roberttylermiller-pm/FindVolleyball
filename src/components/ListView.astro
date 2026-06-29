@@ -6,16 +6,21 @@
     <h2>Listings</h2>
     <span id="list-count" class="list-count"></span>
   </div>
-  <div id="list-results"></div>
+  <div id="list-results" class="list-results"></div>
 </aside>
 
-<style>
+<style is:global>
+  /* is:global — the card markup under #list-results is built via
+     innerHTML in this component's own script, not Astro's template, so
+     it never gets the scoped data-astro-cid attribute a normal <style>
+     block here would rely on (same reason Map.astro's popup CSS, also
+     client-injected, is global). */
   .list-panel {
     width: 0;
     height: 100%;
     overflow-y: auto;
     flex-shrink: 0;
-    background: white;
+    background: #f7f7f7;
     border-left: 1px solid #e5e5e5;
     transition: width 0.2s ease;
   }
@@ -27,11 +32,12 @@
   .list-panel-header {
     position: sticky;
     top: 0;
+    z-index: 1;
     display: flex;
     align-items: baseline;
     gap: 0.5rem;
     padding: 5.5rem 1rem 0.75rem;
-    background: white;
+    background: #f7f7f7;
 
     h2 {
       margin: 0;
@@ -44,7 +50,10 @@
     color: #888;
   }
 
-  #list-results {
+  .list-results {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
     padding: 0 1rem 1rem;
   }
 
@@ -53,27 +62,51 @@
     font-size: 0.875rem;
   }
 
-  .list-item {
+  .list-card {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
     width: 100%;
-    padding: 0.6rem 0.7rem;
-    margin-bottom: 0.5rem;
+    padding: 0;
+    overflow: hidden;
     text-align: left;
-    background: var(--color-bg);
+    background: white;
     border: 1px solid #e5e5e5;
-    border-radius: 0.4rem;
+    border-radius: 0.6rem;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 6%);
     cursor: pointer;
+    transition: box-shadow 0.15s, border-color 0.15s;
   }
 
-  .list-item:hover {
+  .list-card:hover {
     border-color: var(--color-accent);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
   }
 
-  .list-item-kind {
-    align-self: flex-start;
-    padding: 0.05rem 0.4rem;
+  .list-card-media {
+    position: relative;
+    height: 6.5rem;
+    background: #1a1a1a;
+  }
+
+  .list-card-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .list-card-photo-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 1.75rem;
+  }
+
+  .list-card-kind {
+    position: absolute;
+    top: 0.4rem;
+    left: 0.4rem;
+    padding: 0.1rem 0.45rem;
     font-size: 0.65rem;
     font-weight: 600;
     color: #1c1c1e;
@@ -81,22 +114,56 @@
     border-radius: 0.25rem;
   }
 
-  .list-item[data-kind="tournament"] .list-item-kind {
+  .list-card[data-kind="tournament"] .list-card-kind {
     background: #ffd166;
   }
 
-  .list-item[data-kind="league"] .list-item-kind {
+  .list-card[data-kind="league"] .list-card-kind {
     background: #8bd3a0;
   }
 
-  .list-item-name {
-    font-size: 0.9rem;
+  .list-card-decayed {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #856404;
+    background: #fff3cd;
+    border-radius: 0.25rem;
   }
 
-  .list-item-meta,
-  .list-item-schedule {
+  .list-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.6rem 0.7rem 0.7rem;
+  }
+
+  .list-card-name {
+    font-size: 0.9rem;
+    line-height: 1.25;
+  }
+
+  .list-card-meta,
+  .list-card-schedule {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
     font-size: 0.78rem;
     color: #666;
+  }
+
+  /* Schedules can run long (every day of the week, each with times) —
+     clamped to 2 lines rather than letting one listing's card balloon
+     taller than its neighbors; the title attribute carries the full
+     text for anyone who wants it. */
+  .list-card-schedule {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
   }
 
   @media (max-width: 767px) {
@@ -113,6 +180,7 @@
   import { formatListingKindLabel } from '../lib/listings/kindLabel';
   import { formatDateRange } from '../lib/listings/formatDateRange';
   import { formatDayTime } from '../lib/listings/formatDayTime';
+  import { TYPE_BADGES, KIND_EMOJI } from '../lib/map/volleyballIcon';
   import type { Listing } from '../types/listing';
 
   const resultsEl = document.querySelector<HTMLDivElement>('#list-results');
@@ -122,6 +190,10 @@
     if (listing.start_date && listing.end_date) return formatDateRange(listing.start_date, listing.end_date);
     if (listing.days_times.length > 0) return listing.days_times.map(formatDayTime).join(', ');
     return '';
+  }
+
+  function escapeHtml(value: string): string {
+    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function render(listings: Listing[]) {
@@ -141,15 +213,27 @@
     );
 
     resultsEl.innerHTML = sorted
-      .map(
-        (listing) => `
-        <button type="button" class="list-item" data-id="${listing.id}" data-kind="${listing.listing_kind}">
-          <span class="list-item-kind">${formatListingKindLabel(listing.listing_kind)}</span>
-          <strong class="list-item-name">${listing.name ?? `${formatListingTypeLabel(listing.type).toLowerCase()} volleyball`}</strong>
-          <span class="list-item-meta">${formatListingTypeLabel(listing.type)}${listing.city ? ` · ${listing.city}` : ''}</span>
-          ${scheduleLine(listing) ? `<span class="list-item-schedule">${scheduleLine(listing)}</span>` : ''}
-        </button>`,
-      )
+      .map((listing) => {
+        const name = listing.name ?? `${formatListingTypeLabel(listing.type).toLowerCase()} volleyball`;
+        const schedule = scheduleLine(listing);
+        return `
+        <button type="button" class="list-card" data-id="${listing.id}" data-kind="${listing.listing_kind}">
+          <div class="list-card-media">
+            ${
+              listing.photo_url
+                ? `<img class="list-card-photo" src="${listing.photo_url}" alt="" loading="lazy" />`
+                : `<div class="list-card-photo-fallback">${KIND_EMOJI[listing.listing_kind]}</div>`
+            }
+            <span class="list-card-kind">${formatListingKindLabel(listing.listing_kind)}</span>
+            ${listing.decayed ? '<span class="list-card-decayed">Decayed</span>' : ''}
+          </div>
+          <div class="list-card-body">
+            <strong class="list-card-name">${escapeHtml(name)}</strong>
+            <span class="list-card-meta">${TYPE_BADGES[listing.type]} ${formatListingTypeLabel(listing.type)}${listing.city ? ` · ${escapeHtml(listing.city)}` : ''}</span>
+            ${schedule ? `<span class="list-card-schedule" title="${escapeHtml(schedule)}">🕒 ${escapeHtml(schedule)}</span>` : ''}
+          </div>
+        </button>`;
+      })
       .join('');
   }
 
@@ -158,7 +242,7 @@
   });
 
   resultsEl?.addEventListener('click', (event) => {
-    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.list-item');
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.list-card');
     if (!button?.dataset.id) return;
     window.dispatchEvent(
       new CustomEvent<ListingSelectDetail>(LISTING_SELECT_EVENT, { detail: { listingId: button.dataset.id } }),

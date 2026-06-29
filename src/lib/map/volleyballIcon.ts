@@ -6,7 +6,10 @@ import type { ListingKind, ListingType } from '../../types/listing';
 // "beach" stays the stored value (see typeLabel.ts) but the badge uses a
 // beach-umbrella icon rather than waves, since plenty of sand courts
 // aren't actually on a beach.
-const TYPE_BADGES: Record<ListingType, string> = {
+// Exported so other surfaces showing the same surface-type-at-a-glance
+// info (e.g. ListView.astro's cards) use the identical emoji instead of
+// a second, driftable copy of this map.
+export const TYPE_BADGES: Record<ListingType, string> = {
   indoor: '🏠',
   grass: '🌱',
   beach: '🏖️',
@@ -22,7 +25,7 @@ const TYPE_BADGES: Record<ListingType, string> = {
 // glance, but keep the same small surface-type badge in the corner —
 // the surface something's played on is still useful at-a-glance info
 // regardless of what kind of listing it is.
-const KIND_EMOJI: Record<ListingKind, string> = {
+export const KIND_EMOJI: Record<ListingKind, string> = {
   recurring: '🏐',
   tournament: '🏆',
   league: '🏟️',
