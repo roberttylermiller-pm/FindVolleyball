@@ -372,6 +372,20 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   const LIST_BOUNDS_PAD_RATIO = 0.5;
 
   function updateListResults() {
+    // Below the 768px breakpoint, ListView.astro's expanded list takes
+    // over the full width, which collapses .map-area (flex: 1) and its
+    // #map container to 0×0 — the ResizeObserver below still fires
+    // invalidateSize() for that, which in turn fires a move event here.
+    // getBounds() on a zero-size map returns a degenerate box that
+    // contains nothing, which would otherwise wipe the list to empty a
+    // moment after it correctly opened (it's not that there's nothing
+    // here, the map asking the question just can't see anything right
+    // now). Skip and leave the last good list showing instead — the
+    // map becomes interactive again, with a real size, the moment List
+    // is closed.
+    const size = map.getSize();
+    if (size.x === 0 || size.y === 0) return;
+
     const paddedBounds = map.getBounds().pad(LIST_BOUNDS_PAD_RATIO);
     const visible = allListings.filter(
       (listing) => listingMatchesFilters(listing, currentFilters) && paddedBounds.contains([listing.lat, listing.lng]),
