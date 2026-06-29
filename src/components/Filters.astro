@@ -13,6 +13,13 @@
   </fieldset>
   <div class="filters-divider"></div>
   <fieldset>
+    <legend>Kind</legend>
+    <label class="chip"><input type="checkbox" name="kind" value="recurring" checked /><span>Meetup</span></label>
+    <label class="chip"><input type="checkbox" name="kind" value="tournament" checked /><span>Tournament</span></label>
+    <label class="chip"><input type="checkbox" name="kind" value="league" checked /><span>League</span></label>
+  </fieldset>
+  <div class="filters-divider"></div>
+  <fieldset>
     <legend>Day</legend>
     <label class="chip"><input type="checkbox" name="day" value="sun" checked /><span>Sun</span></label>
     <label class="chip"><input type="checkbox" name="day" value="mon" checked /><span>Mon</span></label>
@@ -107,10 +114,14 @@
     const days = Array.from(scope.querySelectorAll<HTMLInputElement>('input[name="day"]:checked')).map(
       (el) => el.value,
     );
+    const kinds = Array.from(scope.querySelectorAll<HTMLInputElement>('input[name="kind"]:checked')).map(
+      (el) => el.value,
+    );
     return {
       types: new Set(types) as ListingFilters['types'],
       costs: new Set(costs) as ListingFilters['costs'],
       days: new Set(days) as ListingFilters['days'],
+      kinds: new Set(kinds) as ListingFilters['kinds'],
     };
   }
 
