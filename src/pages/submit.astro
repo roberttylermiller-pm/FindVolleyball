@@ -43,19 +43,6 @@ import DayTimePicker from '../components/DayTimePicker.astro';
         </div>
       </div>
 
-      <div class="league-only" hidden>
-        <div class="field-row">
-          <label>
-            Start month *
-            <input type="month" name="start_month" />
-          </label>
-          <label>
-            End month *
-            <input type="month" name="end_month" />
-          </label>
-        </div>
-      </div>
-
       <fieldset>
         <legend>Cost</legend>
         <label><input type="radio" name="cost" value="" checked /> Not specified</label>
@@ -93,6 +80,23 @@ import DayTimePicker from '../components/DayTimePicker.astro';
         Name (optional)
         <input type="text" name="name" />
       </label>
+
+      <div class="league-only" hidden>
+        <div class="field-row">
+          <label>
+            Start month (optional)
+            <input type="month" name="start_month" />
+          </label>
+          <label>
+            End month (optional)
+            <input type="month" name="end_month" />
+          </label>
+        </div>
+        <p class="field-hint">
+          Leave blank if you'd rather just note there's an ongoing league and point people to your site for exact
+          dates.
+        </p>
+      </div>
 
       <label>
         Event link or contact email (optional)
@@ -331,10 +335,10 @@ import DayTimePicker from '../components/DayTimePicker.astro';
     if (startDateInput) startDateInput.required = tab === 'tournament';
     if (endDateInput) endDateInput.required = tab === 'tournament';
 
-    const startMonthInput = form?.elements.namedItem('start_month') as HTMLInputElement | null;
-    const endMonthInput = form?.elements.namedItem('end_month') as HTMLInputElement | null;
-    if (startMonthInput) startMonthInput.required = tab === 'league';
-    if (endMonthInput) endMonthInput.required = tab === 'league';
+    // Unlike tournament's dates, a league's start/end month are
+    // optional (Robert's call — keeping them current for an
+    // open-ended, ongoing league was more upkeep than it was worth),
+    // so no `required` toggling for these.
   }
 
   for (const tabBtn of document.querySelectorAll<HTMLButtonElement>('.submit-tab')) {
@@ -416,14 +420,19 @@ import DayTimePicker from '../components/DayTimePicker.astro';
         return;
       }
     } else if (isLeague) {
+      // Unlike a tournament's dates, these are optional — leaving both
+      // blank is a deliberate choice to just note a league exists and
+      // point people to its own site for current dates, not an error.
       const startMonth = (formData.get('start_month') as string) || null;
       const endMonth = (formData.get('end_month') as string) || null;
-      if (!startMonth || !endMonth || endMonth < startMonth) {
-        if (message) message.textContent = 'Please enter a valid start and end month for the league.';
-        return;
+      if (startMonth || endMonth) {
+        if (!startMonth || !endMonth || endMonth < startMonth) {
+          if (message) message.textContent = 'Please enter both a start and end month, or leave both blank.';
+          return;
+        }
+        startDate = firstDayOfMonth(startMonth);
+        endDate = lastDayOfMonth(endMonth);
       }
-      startDate = firstDayOfMonth(startMonth);
-      endDate = lastDayOfMonth(endMonth);
     }
 
     const cost = formData.get('cost');

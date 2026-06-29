@@ -64,14 +64,19 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // Tournaments and leagues are dated events rather than weekly
-  // recurring meetups (ROB-113, ROB-116) — a date range is required
-  // instead of days_times, which the submit form sends as an empty
-  // array for these kinds. Leagues are submitted as whole months on
-  // the client, already converted to first/last-day-of-month dates
-  // before reaching here, so both kinds validate identically.
+  // recurring meetups (ROB-113, ROB-116) — days_times is sent as an
+  // empty array for both kinds, replaced by a date range. Leagues are
+  // submitted as whole months on the client, already converted to
+  // first/last-day-of-month dates before reaching here.
+  //
+  // Unlike a tournament's dates (always required), a league's are
+  // optional — Robert's call, to avoid the upkeep burden of keeping an
+  // ongoing league's dates current. If provided at all, both must be
+  // present and valid; decay (not an end_date) is what eventually
+  // drops a stale, undated league off the map (see the decay job).
   let startDate: string | null = null;
   let endDate: string | null = null;
-  if (listingKind === 'tournament' || listingKind === 'league') {
+  if (listingKind === 'tournament' || (listingKind === 'league' && (body.start_date || body.end_date))) {
     if (
       typeof body.start_date !== 'string' ||
       typeof body.end_date !== 'string' ||
@@ -79,7 +84,8 @@ export const POST: APIRoute = async ({ request }) => {
       !DATE_ONLY.test(body.end_date) ||
       body.end_date < body.start_date
     ) {
-      return new Response(JSON.stringify({ error: `A ${listingKind} needs a valid start and end date` }), { status: 400 });
+      const fieldNoun = listingKind === 'tournament' ? 'a valid start and end date' : 'both a start and end date, or neither';
+      return new Response(JSON.stringify({ error: `A ${listingKind} needs ${fieldNoun}` }), { status: 400 });
     }
     startDate = body.start_date;
     endDate = body.end_date;
