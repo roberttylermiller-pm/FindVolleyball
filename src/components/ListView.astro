@@ -217,7 +217,7 @@
         const name = listing.name ?? `${formatListingTypeLabel(listing.type).toLowerCase()} volleyball`;
         const schedule = scheduleLine(listing);
         return `
-        <button type="button" class="list-card" data-id="${listing.id}" data-kind="${listing.listing_kind}">
+        <button type="button" class="list-card" data-id="${listing.id}" data-kind="${listing.listing_kind}" data-slug="${escapeHtml(listing.slug ?? '')}">
           <div class="list-card-media">
             ${
               listing.photo_url
@@ -245,10 +245,19 @@
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.list-card');
     if (!button?.dataset.id) return;
 
-    // On mobile the list pane covers the entire viewport, so collapse it
-    // first — otherwise the popup opens behind the list and is invisible.
     if (window.innerWidth < 768) {
       const panel = document.querySelector<HTMLElement>('#list-panel');
+      const slug = button.dataset.slug;
+      if (slug) {
+        // Save state so index.astro can restore it when the user presses back.
+        sessionStorage.setItem('vb_restore_list', 'true');
+        sessionStorage.setItem('vb_list_scroll', String(panel?.scrollTop ?? 0));
+        // vb_map_lat/lng/zoom are kept current by Map.astro's scheduleListUpdate.
+        window.location.href = `/courts/${slug}`;
+        return;
+      }
+      // Fallback (no slug yet — shouldn't happen for approved listings):
+      // collapse the panel so at least the map is visible.
       const toggle = document.querySelector<HTMLButtonElement>('#list-toggle');
       panel?.classList.remove('expanded');
       toggle?.setAttribute('aria-expanded', 'false');

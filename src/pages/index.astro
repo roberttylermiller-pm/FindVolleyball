@@ -173,6 +173,8 @@ import Toast from '../components/Toast.astro';
 </style>
 
 <script>
+  import { LISTING_RESULTS_EVENT } from '../lib/map/events';
+
   const filtersToggle = document.querySelector<HTMLButtonElement>('#filters-toggle');
   const filtersPanel = document.querySelector<HTMLDivElement>('#filters-panel');
 
@@ -195,4 +197,32 @@ import Toast from '../components/Toast.astro';
     listToggle.setAttribute('aria-expanded', String(expanded));
     listToggle.textContent = expanded ? 'Map' : 'List';
   });
+
+  // Restore list view state when returning via browser back from a listing
+  // permalink. ListView.astro sets vb_restore_list before navigating away;
+  // Map.astro uses the same flag to skip geolocation and use the saved
+  // center/zoom instead.
+  if (sessionStorage.getItem('vb_restore_list') === 'true') {
+    sessionStorage.removeItem('vb_restore_list');
+    listPanel?.classList.add('expanded');
+    listToggle?.setAttribute('aria-expanded', 'true');
+    if (listToggle) listToggle.textContent = 'Map';
+
+    const savedScroll = sessionStorage.getItem('vb_list_scroll');
+    if (savedScroll && listPanel) {
+      // Wait for the first LISTING_RESULTS_EVENT (Map.astro finishes its
+      // fetch and ListView.astro renders the cards) before restoring
+      // scroll — the panel has no scrollable content before that point.
+      window.addEventListener(
+        LISTING_RESULTS_EVENT,
+        () => {
+          requestAnimationFrame(() => {
+            listPanel.scrollTop = parseInt(savedScroll);
+            sessionStorage.removeItem('vb_list_scroll');
+          });
+        },
+        { once: true },
+      );
+    }
+  }
 </script>

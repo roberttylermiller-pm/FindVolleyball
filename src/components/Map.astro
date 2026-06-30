@@ -290,7 +290,21 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   // Default zoom control sits top-left, the same corner as the search/
   // filter overlay — moved to bottom-right so they can never collide
   // regardless of viewport width.
-  const map = L.map('map', { zoomControl: false }).setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
+  // When the user taps a list card on mobile they're navigated to the
+  // listing's permalink; pressing back should restore exactly the map
+  // position they left. ListView.astro sets vb_restore_list in
+  // sessionStorage before navigating, and saves the last center/zoom
+  // here (kept current by scheduleListUpdate below).
+  const _rl = sessionStorage.getItem('vb_restore_list') === 'true';
+  const _lat = sessionStorage.getItem('vb_map_lat');
+  const _lng = sessionStorage.getItem('vb_map_lng');
+  const _z   = sessionStorage.getItem('vb_map_zoom');
+  const isRestoringState = _rl && _lat !== null && _lng !== null && _z !== null;
+
+  const map = L.map('map', { zoomControl: false }).setView(
+    isRestoringState ? [parseFloat(_lat!), parseFloat(_lng!)] : DEFAULT_MAP_CENTER,
+    isRestoringState ? parseInt(_z!)                          : DEFAULT_MAP_ZOOM,
+  );
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
   // iOS Safari's bottom toolbar auto-hides on scroll/interaction after
@@ -312,7 +326,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   // permission is denied/unavailable/slow — no fallback UI needed
   // since the map is already usable at that default the instant it
   // loads, geolocation only ever improves on it from there.
-  if ('geolocation' in navigator) {
+  if (!isRestoringState && 'geolocation' in navigator) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         map.setView([position.coords.latitude, position.coords.longitude], USER_LOCATION_ZOOM);
@@ -403,6 +417,12 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   // (a filter() over every listing) several times for one user action.
   let listUpdateTimer: ReturnType<typeof setTimeout> | undefined;
   function scheduleListUpdate() {
+    // Keep sessionStorage in sync so ListView.astro can save the current
+    // position before navigating to a permalink (back-button restoration).
+    const c = map.getCenter();
+    sessionStorage.setItem('vb_map_lat', String(c.lat));
+    sessionStorage.setItem('vb_map_lng', String(c.lng));
+    sessionStorage.setItem('vb_map_zoom', String(map.getZoom()));
     clearTimeout(listUpdateTimer);
     listUpdateTimer = setTimeout(updateListResults, 150);
   }
