@@ -244,6 +244,17 @@
   resultsEl?.addEventListener('click', (event) => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.list-card');
     if (!button?.dataset.id) return;
+
+    // On mobile the list pane covers the entire viewport, so collapse it
+    // first — otherwise the popup opens behind the list and is invisible.
+    if (window.innerWidth < 768) {
+      const panel = document.querySelector<HTMLElement>('#list-panel');
+      const toggle = document.querySelector<HTMLButtonElement>('#list-toggle');
+      panel?.classList.remove('expanded');
+      toggle?.setAttribute('aria-expanded', 'false');
+      if (toggle) toggle.textContent = 'List';
+    }
+
     window.dispatchEvent(
       new CustomEvent<ListingSelectDetail>(LISTING_SELECT_EVENT, { detail: { listingId: button.dataset.id } }),
     );
