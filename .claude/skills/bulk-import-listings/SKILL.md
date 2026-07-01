@@ -17,6 +17,7 @@ The scraped data almost always includes a `notes` field (plus `confidence` and `
 - Only keep genuinely visitor-useful facts (format details like "2v2 co-ed", skill-level requirements, "message organizer for exact court", equipment notes) — rewritten in neutral third-person listing language, not the agent's original phrasing. Trim to fit the 250-char DB limit.
 - If nothing in the scraped notes is visitor-appropriate, leave the DB `notes` column null. Don't force it.
 - Never write `confidence` or `source_url` to any DB column — they don't exist as fields on `listings` and aren't meant to.
+- Some rows include a separate `import_notes` field — unlike `notes`, this IS meant for the DB. It means Robert has already resolved whatever caveat the scraping `notes` raised (e.g. phone-confirmed a detail after the scrape) and is handing back the exact visitor-facing text to publish. When present, use `import_notes` as the DB `notes` value directly (still trim to 250 chars) instead of trying to extract something from the exploratory `notes` field.
 
 This was gotten wrong once already (2026-06-30, Bay Area ROB-133 + Portland imports) — scraped commentary went live on the public map/permalink pages until Robert manually cleaned it up.
 
