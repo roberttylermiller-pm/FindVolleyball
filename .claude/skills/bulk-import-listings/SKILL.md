@@ -18,6 +18,7 @@ The scraped data almost always includes a `notes` field (plus `confidence` and `
 - If nothing in the scraped notes is visitor-appropriate, leave the DB `notes` column null. Don't force it.
 - Never write `confidence` or `source_url` to any DB column — they don't exist as fields on `listings` and aren't meant to.
 - Some rows include a separate `import_notes` field — unlike `notes`, this IS meant for the DB. It means Robert has already resolved whatever caveat the scraping `notes` raised (e.g. phone-confirmed a detail after the scrape) and is handing back the exact visitor-facing text to publish. When present, use `import_notes` as the DB `notes` value directly (still trim to 250 chars) instead of trying to extract something from the exploratory `notes` field.
+- `import_notes` can also carry direct override instructions rather than just finished notes text — e.g. "Setup for every day, no time list" (replace `days_times` with all 7 days, no start/end) or "Add note: <text>" (use `<text>` as the DB notes). Read it as an instruction from Robert, not scraped data, and follow it literally.
 
 This was gotten wrong once already (2026-06-30, Bay Area ROB-133 + Portland imports) — scraped commentary went live on the public map/permalink pages until Robert manually cleaned it up.
 
@@ -54,6 +55,12 @@ For each row, in this order:
 1. **Decode `google_maps_url`** — this is a link Robert enters/verifies by hand and is the most trustworthy location signal available. Resolve short links (`maps.app.goo.gl`, `goo.gl`) by following the redirect, then extract coordinates the same way `src/lib/listings/googleMapsUrl.ts`'s `decodeGoogleMapsUrl` does: prefer the `!3d{lat}!4d{lng}` place-pin pattern, fall back to the `@lat,lng,zoom` viewport-center pattern.
 2. **Forward-geocode `submitted_address`** via Nominatim only if there's no Maps link, or it fails to decode. Strip suite/unit numbers (e.g. `#110`) if the address-only geocode fails — Nominatim frequently can't resolve street+suite combos.
 3. If the xlsx/JSON already has explicit `lat`/`lng` columns filled in (not always the case), those take priority over both — they mean the scraping agent already resolved coordinates itself.
+
+## Check for an existing listing before inserting
+
+The scraping agent doesn't have visibility into what's already in the DB, so a batch can re-submit a listing already imported in an earlier ticket — sometimes as a genuine duplicate, sometimes as a follow-up correction with better data (e.g. a vague schedule later confirmed with real times) once Robert or the agent found more specific info. This happened 2026-07-01 (ROB-138 re-submitted ROB-136's "The Volley Gang" listing with corrected days_times).
+
+Before inserting any row, check for an existing row with the same `name` (`select id,name,lat,lng,days_times,notes from listings where name ilike '%...%'`). If one exists at the same address/coordinates, flag it to Robert with `AskUserQuestion` rather than silently choosing — ask whether to `UPDATE` the existing row (typical when the new data is more complete/corrected) or insert a second row anyway. Don't skip this check just because the row looks routine.
 
 ## Per-row processing
 
