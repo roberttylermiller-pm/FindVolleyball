@@ -22,13 +22,23 @@ This was gotten wrong once already (2026-06-30, Bay Area ROB-133 + Portland impo
 
 ## Data quality gate before importing
 
-Before writing anything to the DB, review every row for problems the scraping agent itself may have flagged, and surface them to Robert with `AskUserQuestion` rather than silently guessing:
+Some batches include an explicit `include: true/false` field per row — this is the scraping agent's own recommendation after weighing scope/confidence/activity signals. **Trust it: import `include: true` rows, skip `include: false` rows, without asking.** Robert confirmed this rule directly (2026-07-01, ROB-135) after being asked about it — no need to re-confirm on future batches. Note when a row's freeform `notes` text contradicts its own `include` flag (this has happened — notes said "include" while the field said `false`); when that happens, still trust the structured `include` field, only flag it to Robert if it's genuinely unclear which one is stale.
+
+When there's no `include` field (older/simpler batch shape), or a row has a caveat the scraping agent flagged as needing action rather than just informational (see below), review each row and surface judgment calls to Robert with `AskUserQuestion` rather than silently guessing:
 - Missing or vague `days_times` (day-only, no start/end time) combined with a note like "could not confirm."
-- A listing explicitly flagged as outside the requested search scope/area.
+- A listing explicitly flagged as outside the requested search scope/area (only when there's no `include` field already resolving this).
 - Contradictions between `days_times` and `notes` (e.g. an implausible overnight time span alongside "could not find published hours" — likely a placeholder, not real data).
-- Anything the agent's own notes call uncertain, unconfirmed, or worth excluding.
+- Anything the agent's own notes call uncertain, unconfirmed, or worth excluding — "verify before publishing," "confirm current status," etc.
 
 Batch all the judgment calls into one `AskUserQuestion` call rather than asking one at a time.
+
+## Handling different scraped JSON shapes
+
+The scraping agent's output format has varied between batches — don't assume a fixed schema, read what's actually there:
+- Some batches use an array of `{listing_kind, name, type, ..., days_times: [{day, start_time, end_time}]}` objects directly.
+- Some batches wrap listings in `{metro, general_notes, listings: [...]}` with a different per-row shape: `days_selected: [day, ...]` (a list of day codes) plus a single top-level `start_time`/`end_time` shared by all of them — expand this into one `days_times` entry per day in `days_selected`, each carrying the same start/end time.
+- Field types vary too — `signup_required` may be a real boolean or the literal string `"true"`/`"false"`; `cost` may be `null`, `""` (empty string), or `"unknown"` — all three mean "unspecified," normalize to `null` per the rule above.
+- `google_maps_url` may be an empty string rather than absent — treat both the same as "no link."
 
 ## Field normalizations (apply silently, no need to ask)
 
