@@ -1,5 +1,6 @@
 import { formatDayTime } from './formatDayTime';
 import { formatDateRange } from './formatDateRange';
+import { formatListingActivityLabel } from './activityLabel';
 import { capitalize } from '../text';
 import { formatListingTypeLabel } from './typeLabel';
 import { formatListingKindLabel } from './kindLabel';
@@ -61,6 +62,7 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
       <button type="button" class="popup-vote-down" aria-label="No longer active">👎</button>
       <span class="popup-vote-message"></span>
     </div>
+    <div class="popup-activity-date">${formatListingActivityLabel(listing.created_at, listing.updated_at)}</div>
     <button type="button" class="popup-report-toggle">Report an issue</button>
     <form class="popup-report-form" hidden>
       <label class="popup-honeypot" aria-hidden="true">

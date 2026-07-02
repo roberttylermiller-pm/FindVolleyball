@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase/client';
 import { buildCourtMetadata } from '../../lib/seo/courtMetadata';
 import { formatDayTime } from '../../lib/listings/formatDayTime';
 import { formatDateRange } from '../../lib/listings/formatDateRange';
+import { formatListingActivityLabel } from '../../lib/listings/activityLabel';
 import { capitalize } from '../../lib/text';
 import { formatListingTypeLabel } from '../../lib/listings/typeLabel';
 import { formatVisibilityLabel } from '../../lib/listings/visibility';
@@ -124,6 +125,7 @@ const structuredData = buildListingStructuredData(listing, Astro.url.href);
         <button type="button" id="vote-down" aria-label="No longer active">👎</button>
       </div>
       <p id="vote-message" role="status"></p>
+      <p class="activity-date">{formatListingActivityLabel(listing.created_at, listing.updated_at)}</p>
     </section>
 
     <section class="report-section">
@@ -234,6 +236,13 @@ const structuredData = buildListingStructuredData(listing, Astro.url.href);
       cursor: not-allowed;
       opacity: 0.5;
     }
+  }
+
+  .activity-date {
+    margin: 0.5rem 0 0;
+    color: #888;
+    font-size: 0.75rem;
+    font-style: italic;
   }
 
   .honeypot-field {
