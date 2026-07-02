@@ -53,8 +53,9 @@ The scraping agent's output format has varied between batches — don't assume a
 
 For each row, in this order:
 1. **Decode `google_maps_url`** — this is a link Robert enters/verifies by hand and is the most trustworthy location signal available. Resolve short links (`maps.app.goo.gl`, `goo.gl`) by following the redirect, then extract coordinates the same way `src/lib/listings/googleMapsUrl.ts`'s `decodeGoogleMapsUrl` does: prefer the `!3d{lat}!4d{lng}` place-pin pattern, fall back to the `@lat,lng,zoom` viewport-center pattern.
-2. **Forward-geocode `submitted_address`** via Nominatim only if there's no Maps link, or it fails to decode. Strip suite/unit numbers (e.g. `#110`) if the address-only geocode fails — Nominatim frequently can't resolve street+suite combos.
-3. If the xlsx/JSON already has explicit `lat`/`lng` columns filled in (not always the case), those take priority over both — they mean the scraping agent already resolved coordinates itself.
+2. If the xlsx/JSON already has explicit `lat`/`lng` columns filled in (not always the case), those take priority when there's no Maps link — they mean the scraping agent already resolved coordinates itself.
+3. **Missing/empty `google_maps_url` (and no explicit lat/lng): stop and ask Robert before importing that row.** Ideally every row has a Maps link — a missing one means the location signal is weaker (Nominatim address-search results can land on the wrong building, especially with suite numbers or ambiguous addresses). Surface these rows with `AskUserQuestion` (batched with any other judgment calls for the ticket) rather than silently falling back to forward-geocoding `submitted_address`. Only forward-geocode if Robert explicitly approves it for that row.
+4. If Robert approves forward-geocoding, strip suite/unit numbers (e.g. `#110`) if the plain address-only geocode fails — Nominatim frequently can't resolve street+suite combos.
 
 ## Check for an existing listing before inserting
 
