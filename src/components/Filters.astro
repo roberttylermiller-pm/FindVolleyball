@@ -29,6 +29,8 @@
     <label class="chip"><input type="checkbox" name="day" value="fri" checked /><span>Fri</span></label>
     <label class="chip"><input type="checkbox" name="day" value="sat" checked /><span>Sat</span></label>
   </fieldset>
+  <div class="filters-divider"></div>
+  <button type="button" id="filters-clear-all" class="clear-all">Clear all</button>
 </div>
 
 <style>
@@ -95,6 +97,21 @@
         background: var(--color-accent);
       }
     }
+
+    .clear-all {
+      padding: 0.3rem 0.5rem;
+      font-size: 0.75rem;
+      color: #999;
+      background: none;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.15s;
+    }
+
+    .clear-all:hover {
+      color: white;
+    }
   }
 </style>
 
@@ -126,6 +143,15 @@
   }
 
   container?.addEventListener('change', () => {
+    window.dispatchEvent(new CustomEvent<ListingFilters>(LISTING_FILTERS_EVENT, { detail: readFilters(container) }));
+  });
+
+  const clearAllButton = document.querySelector<HTMLButtonElement>('#filters-clear-all');
+  clearAllButton?.addEventListener('click', () => {
+    if (!container) return;
+    container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach((input) => {
+      input.checked = false;
+    });
     window.dispatchEvent(new CustomEvent<ListingFilters>(LISTING_FILTERS_EVENT, { detail: readFilters(container) }));
   });
 </script>
