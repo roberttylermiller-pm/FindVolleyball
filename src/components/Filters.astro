@@ -142,7 +142,21 @@
     };
   }
 
-  container?.addEventListener('change', () => {
+  container?.addEventListener('change', (event) => {
+    // Selecting a Kind while every Type is deselected (e.g. right after
+    // Clear all) would otherwise show zero results — re-select all
+    // Types so the newly-picked Kind actually surfaces listings.
+    const target = event.target as HTMLInputElement;
+    if (target.name === 'kind' && target.checked) {
+      const typeInputs = container.querySelectorAll<HTMLInputElement>('input[name="type"]');
+      const noTypeSelected = Array.from(typeInputs).every((input) => !input.checked);
+      if (noTypeSelected) {
+        typeInputs.forEach((input) => {
+          input.checked = true;
+        });
+      }
+    }
+
     window.dispatchEvent(new CustomEvent<ListingFilters>(LISTING_FILTERS_EVENT, { detail: readFilters(container) }));
   });
 
