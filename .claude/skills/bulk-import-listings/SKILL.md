@@ -26,15 +26,16 @@ This was gotten wrong once already (2026-06-30, Bay Area ROB-133 + Portland impo
 
 ## Data quality gate before importing
 
-Some batches include an explicit `include: true/false` field per row — this is the scraping agent's own recommendation after weighing scope/confidence/activity signals. **Trust it: import `include: true` rows, skip `include: false` rows, without asking.** Robert confirmed this rule directly (2026-07-01, ROB-135) after being asked about it — no need to re-confirm on future batches. Note when a row's freeform `notes` text contradicts its own `include` flag (this has happened — notes said "include" while the field said `false`); when that happens, still trust the structured `include` field, only flag it to Robert if it's genuinely unclear which one is stale.
+**Don't second-guess verification caveats in `notes`.** The scraping agent routinely writes things like "needs manual verification before publishing," "confirm current status," "verify via their calendar" — these are requests directed at Robert, and by the time he hands a ticket to you to import, he's already done that verification himself (confirmed by Robert directly, 2026-07-03, after repeatedly being asked about this exact kind of caveat across several tickets — ROB-142, ROB-147, etc). **Do not flag these to Robert with `AskUserQuestion` and do not skip a row over them.** Import the row as given.
 
-When there's no `include` field (older/simpler batch shape), or a row has a caveat the scraping agent flagged as needing action rather than just informational (see below), review each row and surface judgment calls to Robert with `AskUserQuestion` rather than silently guessing:
-- Missing or vague `days_times` (day-only, no start/end time) combined with a note like "could not confirm."
-- A listing explicitly flagged as outside the requested search scope/area (only when there's no `include` field already resolving this).
-- Contradictions between `days_times` and `notes` (e.g. an implausible overnight time span alongside "could not find published hours" — likely a placeholder, not real data).
-- Anything the agent's own notes call uncertain, unconfirmed, or worth excluding — "verify before publishing," "confirm current status," etc.
+Some batches include an explicit `include: true/false` field per row — this is the scraping agent's own recommendation after weighing scope/confidence/activity signals. **Trust it: import `include: true` rows, skip `include: false` rows, without asking.** Robert confirmed this rule directly (2026-07-01, ROB-135) — no need to re-confirm on future batches. Note when a row's freeform `notes` text contradicts its own `include` flag (this has happened — notes said "include" while the field said `false`); when that happens, still trust the structured `include` field, only flag it to Robert if it's genuinely unclear which one is stale.
 
-Batch all the judgment calls into one `AskUserQuestion` call rather than asking one at a time.
+Judgment calls that still warrant an `AskUserQuestion` (these are about the *data itself* being unusable or ambiguous, not about whether it's been "verified enough"):
+- A genuine contradiction between two structured fields that makes it unclear what to actually store (e.g. `days_times` describing an implausible overnight span that conflicts with another field's stated hours, or `days_times` populated with specific values while another field says none could be confirmed at all — a straight either/or, not a "maybe double check this" caveat).
+- Re-submission of a listing that appears to already exist in the DB (see the duplicate check below) — update vs. duplicate is a real decision, not a confidence caveat.
+- A row genuinely missing data needed to construct a valid DB row (no address/coordinates at all, no surface type, etc).
+
+Batch any such judgment calls into one `AskUserQuestion` call rather than asking one at a time.
 
 ## Handling different scraped JSON shapes
 
