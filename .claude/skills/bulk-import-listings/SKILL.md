@@ -11,6 +11,8 @@ Robert runs a separate scraping agent that finds real-world volleyball meetups/t
 
 The scraped data almost always includes a `notes` field (plus `confidence` and `source_url`). **These are the scraping agent talking to Robert** — confidence caveats, "confirm before publishing," "you may want to exclude this," attendee-count evidence for why it trusts a listing. They are NOT visitor-facing content.
 
+Robert's intake form labels these fields for humans as "Notes from research agent" (`notes`) and "Notes to import agent" (`import_notes`) — the underlying JSON keys are unchanged (confirmed 2026-07-02), so no parsing logic needs to differ. If a batch ever shows the human-readable labels instead of raw JSON keys, map them the same way.
+
 **Never copy the scraped `notes` field verbatim into the DB `notes` column.** For each row:
 - Read the scraped `notes` text.
 - Discard anything that is meta-commentary about the scrape itself (confidence, publish-readiness, "I could not confirm X", attendee counts as evidence).
