@@ -50,6 +50,7 @@ The scraping agent's output format has varied between batches — don't assume a
 - `type: "sand"` → our schema's surface enum is `indoor | grass | beach`; map `sand` to `beach`.
 - `cost: "unknown"` (or any value other than `free`/`paid`) → `null`. `null` means "unspecified," which is exactly what "unknown" means — don't invent a third cost state.
 - `end_time: "24:00"` → normalize to `23:59`. The DB stores plain `"HH:MM"` strings and `formatDayTime` (`src/lib/listings/formatDayTime.ts`) renders hour 24 as "12:00 PM" (wrong) since it has no special-case for midnight.
+- `external_link` that's actually contact text (e.g. `"Contact: (210)577-1939"`) rather than a URL or email → `null`, not stored as-is. `buildExternalLinkHref`/`getExternalLinkLabel` (`src/lib/listings/externalLink.ts`) only special-case a bare email (has `@`, no `://`); anything else gets rendered as a raw `<a href>`, so a phone-only string produces a broken link. A phone number worth keeping can go in `notes` instead.
 - A single `days_times` entry can't cross midnight into the next day (no next-day rollover in the schema) — if scraped hours run past midnight (e.g. "11am-1am"), cap that day's `end_time` at `23:59` and flag it in the data-quality gate below rather than silently guessing whether to shift it to the next day's entry.
 
 ## lat/lng priority
