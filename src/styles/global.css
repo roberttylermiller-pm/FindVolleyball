@@ -1,7 +1,9 @@
 :root {
   --color-bg: #f7f8fa;
   --color-text: #1a1a1a;
-  --color-accent: #ff7a00;
+  /* LOVB Los Angeles' coral-orange accent (ROB-168) — sampled from
+     their live site CSS (lovbla.com), not the previous plain orange. */
+  --color-accent: #f0523d;
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
   /* Static fallback for the instant before Header.astro's script runs
      and starts syncing this to the header's actual rendered height
