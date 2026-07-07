@@ -15,8 +15,11 @@ import Toast from '../components/Toast.astro';
     <div class="map-controls">
       <div class="map-controls-row">
         <LocationSearch />
-        <!-- Only shown on narrow screens (ROB-120) — on wider ones
-             .filters-panel is always visible and this stays hidden. -->
+        <!-- Filters and List (ROB-158) are a single mutually-exclusive
+             control cluster alongside search — opening one collapses
+             the other (see script below), same as volleymap's
+             reference pattern. Both toggle at every screen width now;
+             Filters is no longer permanently visible on wide screens. -->
         <button
           id="filters-toggle"
           type="button"
@@ -26,10 +29,6 @@ import Toast from '../components/Toast.astro';
         >
           Filters ▾
         </button>
-        <!-- List view toggle (ROB-131) — collapsed by default, unlike
-             filters-toggle this is shown at every screen width since
-             the list pane is opt-in everywhere, not a narrow-screen
-             space-saving measure. -->
         <button id="list-toggle" type="button" class="list-toggle" aria-expanded="false" aria-controls="list-panel">
           List
         </button>
@@ -94,7 +93,13 @@ import Toast from '../components/Toast.astro';
     }
   }
 
+  /* Filters and List (ROB-158) share one visual style — a unified
+     control cluster alongside search rather than two differently-styled
+     toggles (Filters used to be permanently visible on wide screens
+     instead of a toggle at all). */
+  .filters-toggle,
   .list-toggle {
+    flex-shrink: 0;
     padding: 0.4rem 0.75rem;
     font-size: 0.8rem;
     font-weight: 600;
@@ -106,17 +111,9 @@ import Toast from '../components/Toast.astro';
     white-space: nowrap;
   }
 
+  .filters-toggle[aria-expanded="true"],
   .list-toggle[aria-expanded="true"] {
     background: var(--color-accent);
-  }
-
-  /* Shown at every width (unlike .filters-toggle), so it needs the same
-     flex-shrink: 0 floor protection here too once the row stops
-     wrapping below. */
-  @media (max-width: 480px) {
-    .list-toggle {
-      flex-shrink: 0;
-    }
   }
 
   .map-controls-row {
@@ -125,11 +122,10 @@ import Toast from '../components/Toast.astro';
     gap: 0.5rem;
   }
 
-  /* Hidden on wider screens — filters-panel is always visible there,
-     same as before this ticket. Only appears (and only matters) below
-     the breakpoint where the filter chips would otherwise permanently
-     eat into the map's vertical space (ROB-120). */
-  .filters-toggle {
+  /* Collapsed by default at every width now (ROB-158) — previously only
+     true below 480px; on wider screens this used to stay permanently
+     visible instead of behaving like a toggle. */
+  .filters-panel:not(.expanded) {
     display: none;
   }
 
@@ -141,36 +137,14 @@ import Toast from '../components/Toast.astro';
        available width to negotiate that shrink against, rather than
        just sizing to its own content (ROB-120 follow-up — a fixed
        pixel budget computed against a guessed viewport width kept not
-       holding up on a real device). Scoped to this breakpoint only —
-       on wider screens .map-controls-row needs to stay content-sized
-       so filters-panel can still sit beside it via the parent's
-       space-between. */
+       holding up on a real device). */
     .map-controls-row {
       flex-wrap: nowrap;
       width: 100%;
     }
 
-    .filters-toggle {
-      display: inline-flex;
-      align-items: center;
-      flex-shrink: 0;
-      padding: 0.4rem 0.75rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: white;
-      background: #1a1a1a;
-      border: none;
-      border-radius: 0.4rem;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
     .filters-panel {
       flex-basis: 100%;
-    }
-
-    .filters-panel:not(.expanded) {
-      display: none;
     }
   }
 </style>
@@ -180,11 +154,29 @@ import Toast from '../components/Toast.astro';
 
   const filtersToggle = document.querySelector<HTMLButtonElement>('#filters-toggle');
   const filtersPanel = document.querySelector<HTMLDivElement>('#filters-panel');
+  const listToggle = document.querySelector<HTMLButtonElement>('#list-toggle');
+  const listPanel = document.querySelector<HTMLElement>('#list-panel');
 
+  function collapseList() {
+    listPanel?.classList.remove('expanded');
+    listToggle?.setAttribute('aria-expanded', 'false');
+    if (listToggle) listToggle.textContent = 'List';
+  }
+
+  function collapseFilters() {
+    filtersPanel?.classList.remove('expanded');
+    filtersToggle?.setAttribute('aria-expanded', 'false');
+    if (filtersToggle) filtersToggle.textContent = 'Filters ▾';
+  }
+
+  // Filters and List (ROB-158) are mutually exclusive — one control
+  // cluster with a single expanded panel at a time, matching volleymap's
+  // reference pattern, rather than both able to stay open together.
   filtersToggle?.addEventListener('click', () => {
     const expanded = filtersPanel?.classList.toggle('expanded') ?? false;
     filtersToggle.setAttribute('aria-expanded', String(expanded));
     filtersToggle.textContent = expanded ? 'Filters ▴' : 'Filters ▾';
+    if (expanded) collapseList();
   });
 
   // List view toggle (ROB-131) — collapsed by default. Map.astro's own
@@ -192,13 +184,11 @@ import Toast from '../components/Toast.astro';
   // container's size changes, which the .map-area flex item shrinking
   // to make room for the expanded panel triggers on its own — no extra
   // handling needed here for that part.
-  const listToggle = document.querySelector<HTMLButtonElement>('#list-toggle');
-  const listPanel = document.querySelector<HTMLElement>('#list-panel');
-
   listToggle?.addEventListener('click', () => {
     const expanded = listPanel?.classList.toggle('expanded') ?? false;
     listToggle.setAttribute('aria-expanded', String(expanded));
     listToggle.textContent = expanded ? 'Map' : 'List';
+    if (expanded) collapseFilters();
   });
 
   // Restore list view state when returning via browser back from a listing
