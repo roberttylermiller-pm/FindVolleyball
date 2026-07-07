@@ -15,9 +15,10 @@ import Toast from '../components/Toast.astro';
     <div class="map-controls">
       <div class="map-controls-row">
         <LocationSearch />
+        <div class="toggle-divider" aria-hidden="true"></div>
         <!-- Filters and List (ROB-158) are a single mutually-exclusive
-             control cluster alongside search — opening one collapses
-             the other (see script below), same as volleymap's
+             control cluster alongside search, all one bar — opening one
+             collapses the other (see script below), same as volleymap's
              reference pattern. Both toggle at every screen width now;
              Filters is no longer permanently visible on wide screens. -->
         <button
@@ -27,10 +28,26 @@ import Toast from '../components/Toast.astro';
           aria-expanded="false"
           aria-controls="filters-panel"
         >
-          Filters ▾
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="4" y1="6" x2="20" y2="6"></line>
+            <circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"></circle>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"></circle>
+            <line x1="4" y1="18" x2="20" y2="18"></line>
+            <circle cx="7" cy="18" r="2" fill="currentColor" stroke="none"></circle>
+          </svg>
+          <span class="toggle-label">Filters</span>
         </button>
         <button id="list-toggle" type="button" class="list-toggle" aria-expanded="false" aria-controls="list-panel">
-          List
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="8" y1="6" x2="20" y2="6"></line>
+            <line x1="8" y1="12" x2="20" y2="12"></line>
+            <line x1="8" y1="18" x2="20" y2="18"></line>
+            <circle cx="4" cy="6" r="1.2" fill="currentColor" stroke="none"></circle>
+            <circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none"></circle>
+            <circle cx="4" cy="18" r="1.2" fill="currentColor" stroke="none"></circle>
+          </svg>
+          <span class="toggle-label">List</span>
         </button>
       </div>
       <div id="filters-panel" class="filters-panel">
@@ -93,33 +110,60 @@ import Toast from '../components/Toast.astro';
     }
   }
 
-  /* Filters and List (ROB-158) share one visual style — a unified
-     control cluster alongside search rather than two differently-styled
-     toggles (Filters used to be permanently visible on wide screens
-     instead of a toggle at all). */
+  /* Filters and List (ROB-158) sit inside the same white bar as search
+     now, rather than as separate dark buttons beside a separate white
+     box — one continuous control cluster matching the volleymap
+     reference. Neutral by default; the orange accent (same one the
+     Search button and expanded-chip states already use) signals which
+     panel is open. */
   .filters-toggle,
   .list-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     flex-shrink: 0;
-    padding: 0.4rem 0.75rem;
+    padding: 0.45rem 0.7rem;
     font-size: 0.8rem;
     font-weight: 600;
-    color: white;
-    background: #1a1a1a;
+    color: #444;
+    background: #f0f0f0;
     border: none;
     border-radius: 0.4rem;
     cursor: pointer;
     white-space: nowrap;
+
+    svg {
+      width: 0.95rem;
+      height: 0.95rem;
+      flex-shrink: 0;
+    }
   }
 
   .filters-toggle[aria-expanded="true"],
   .list-toggle[aria-expanded="true"] {
+    color: white;
     background: var(--color-accent);
   }
 
+  /* The single unified bar (ROB-158) — search input/button, a divider,
+     then Filters and List all inside one continuous white pill instead
+     of search having its own box next to a separately-styled pair of
+     dark buttons. */
   .map-controls-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    padding: 0.4rem;
+    background: white;
+    border-radius: 0.6rem;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
+  }
+
+  .toggle-divider {
+    flex-shrink: 0;
+    width: 1px;
+    height: 1.5rem;
+    background: #e0e0e0;
   }
 
   /* Collapsed by default at every width now (ROB-158) — previously only
@@ -156,17 +200,20 @@ import Toast from '../components/Toast.astro';
   const filtersPanel = document.querySelector<HTMLDivElement>('#filters-panel');
   const listToggle = document.querySelector<HTMLButtonElement>('#list-toggle');
   const listPanel = document.querySelector<HTMLElement>('#list-panel');
+  // .toggle-label spans (ROB-158) — setting textContent on the whole
+  // button would also wipe out its icon <svg>, so the swappable "List"/
+  // "Map" text lives in its own child element instead.
+  const listLabel = listToggle?.querySelector<HTMLSpanElement>('.toggle-label');
 
   function collapseList() {
     listPanel?.classList.remove('expanded');
     listToggle?.setAttribute('aria-expanded', 'false');
-    if (listToggle) listToggle.textContent = 'List';
+    if (listLabel) listLabel.textContent = 'List';
   }
 
   function collapseFilters() {
     filtersPanel?.classList.remove('expanded');
     filtersToggle?.setAttribute('aria-expanded', 'false');
-    if (filtersToggle) filtersToggle.textContent = 'Filters ▾';
   }
 
   // Filters and List (ROB-158) are mutually exclusive — one control
@@ -175,7 +222,6 @@ import Toast from '../components/Toast.astro';
   filtersToggle?.addEventListener('click', () => {
     const expanded = filtersPanel?.classList.toggle('expanded') ?? false;
     filtersToggle.setAttribute('aria-expanded', String(expanded));
-    filtersToggle.textContent = expanded ? 'Filters ▴' : 'Filters ▾';
     if (expanded) collapseList();
   });
 
@@ -187,7 +233,7 @@ import Toast from '../components/Toast.astro';
   listToggle?.addEventListener('click', () => {
     const expanded = listPanel?.classList.toggle('expanded') ?? false;
     listToggle.setAttribute('aria-expanded', String(expanded));
-    listToggle.textContent = expanded ? 'Map' : 'List';
+    if (listLabel) listLabel.textContent = expanded ? 'Map' : 'List';
     if (expanded) collapseFilters();
   });
 
@@ -199,7 +245,7 @@ import Toast from '../components/Toast.astro';
     sessionStorage.removeItem('vb_restore_list');
     listPanel?.classList.add('expanded');
     listToggle?.setAttribute('aria-expanded', 'true');
-    if (listToggle) listToggle.textContent = 'Map';
+    if (listLabel) listLabel.textContent = 'Map';
 
     const savedScroll = sessionStorage.getItem('vb_list_scroll');
     if (savedScroll && listPanel) {
