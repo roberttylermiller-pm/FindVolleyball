@@ -30,18 +30,32 @@
       padding: 0.4rem 0.6rem;
       font-size: 0.875rem;
       border: 1px solid #ccc;
-      border-radius: 0.25rem;
+      border-radius: var(--radius-sharp);
     }
 
     button {
       flex-shrink: 0;
       padding: 0.4rem 0.75rem;
-      font-size: 0.875rem;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
       color: white;
       background: var(--color-accent);
       border: none;
-      border-radius: 0.25rem;
+      border-radius: var(--radius-sharp);
       cursor: pointer;
+      transition: opacity var(--motion-base);
+    }
+
+    button:hover {
+      opacity: 0.88;
+    }
+
+    button:active {
+      transform: scale(0.97);
+      transition-duration: var(--motion-fast);
     }
   }
 </style>

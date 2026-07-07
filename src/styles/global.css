@@ -1,10 +1,24 @@
 :root {
   --color-bg: #f7f8fa;
   --color-text: #1a1a1a;
-  /* LOVB Los Angeles' coral-orange accent (ROB-168) — sampled from
-     their live site CSS (lovbla.com), not the previous plain orange. */
-  --color-accent: #f0523d;
+  /* LOVB Los Angeles' anchor accent orange (ROB-169) — supersedes
+     ROB-168's #f0523d with the value from a dedicated brand-token
+     analysis pass, more precisely sampled than a manual CSS grep. */
+  --color-accent: #ff7142;
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* LOVB LA's display font (ROB-169) — used for headings and button/tag
+     labels. Body copy keeps --font-sans rather than switching every
+     paragraph in the app to a new body typeface. */
+  --font-display: "Bricolage Grotesque", "Barlow Condensed", sans-serif;
+  --font-mono: "DM Mono", "IBM Plex Mono", monospace;
+  /* Sharp-cornered button/input language from the same source (ROB-169) —
+     opt-in per component rather than a global border-radius reset, so
+     existing rounded surfaces (map popups, pill filter chips) are
+     unaffected. */
+  --radius-sharp: 0px;
+  --radius-tag: 2px;
+  --motion-fast: 0.1s ease-in-out;
+  --motion-base: 0.17s ease-in-out;
   /* Static fallback for the instant before Header.astro's script runs
      and starts syncing this to the header's actual rendered height
      (ROB-120) — the map page's filter/search overlay reads this var to

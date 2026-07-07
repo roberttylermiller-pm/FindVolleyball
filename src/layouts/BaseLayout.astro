@@ -26,10 +26,14 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
     <meta name="google-site-verification" content="gswp8WfTElRowgemGlPpLwMljdKdP58oGtdZlPGCEMk" />
     <title>{title}</title>
 
-    <!-- Sirin Stencil for the header wordmark (ROB-81) -->
+    <!-- Bricolage Grotesque (headings + header wordmark) + DM Mono
+         (button/tag labels), replacing Sirin Stencil (ROB-169) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Sirin+Stencil&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=DM+Mono:wght@500&display=swap"
+      rel="stylesheet"
+    />
     {description && <meta name="description" content={description} />}
     <link rel="canonical" href={canonicalUrl} />
 

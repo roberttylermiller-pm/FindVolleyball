@@ -123,20 +123,35 @@ import Toast from '../components/Toast.astro';
     gap: 0.35rem;
     flex-shrink: 0;
     padding: 0.45rem 0.7rem;
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     color: #444;
     background: #f0f0f0;
     border: none;
-    border-radius: 0.4rem;
+    border-radius: var(--radius-sharp);
     cursor: pointer;
     white-space: nowrap;
+    transition: opacity var(--motion-base);
 
     svg {
       width: 0.95rem;
       height: 0.95rem;
       flex-shrink: 0;
     }
+  }
+
+  .filters-toggle:hover,
+  .list-toggle:hover {
+    opacity: 0.88;
+  }
+
+  .filters-toggle:active,
+  .list-toggle:active {
+    transform: scale(0.97);
+    transition-duration: var(--motion-fast);
   }
 
   .filters-toggle[aria-expanded="true"],
@@ -155,7 +170,7 @@ import Toast from '../components/Toast.astro';
     gap: 0.5rem;
     padding: 0.4rem;
     background: white;
-    border-radius: 0.6rem;
+    border-radius: var(--radius-sharp);
     box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
   }
 

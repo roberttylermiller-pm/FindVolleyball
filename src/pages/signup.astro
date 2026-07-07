@@ -46,17 +46,37 @@ import GoogleSignInButton from '../components/GoogleSignInButton.astro';
       padding: 0.5rem;
       font-size: 1rem;
       border: 1px solid #ccc;
-      border-radius: 0.25rem;
+      border-radius: var(--radius-sharp);
     }
 
     button[type="submit"] {
-      padding: 0.6rem;
-      font-size: 1rem;
+      padding: 0.7rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
       color: white;
       background: var(--color-accent);
       border: none;
-      border-radius: 0.25rem;
+      border-radius: var(--radius-sharp);
       cursor: pointer;
+      transition: opacity var(--motion-base);
+    }
+
+    button[type="submit"]:hover {
+      opacity: 0.88;
+    }
+
+    button[type="submit"]:active {
+      transform: scale(0.97);
+      transition-duration: var(--motion-fast);
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: -0.01em;
     }
   }
 </style>
