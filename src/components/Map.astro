@@ -164,7 +164,23 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   }
 
   .listing-popup .popup-row {
-    color: #ccc;
+    margin-bottom: 0.3rem;
+    color: #e5e5e5;
+  }
+
+  /* Own line, small/muted/uppercase (ROB-160) — previously "Label: value"
+     ran together in one plain-colored line, hard to tell apart at a
+     glance especially for the long "When" schedule text that wraps.
+     Matches the same label/value contrast the /courts/[slug] permalink
+     page's <dl> already uses. */
+  .listing-popup .popup-label {
+    display: block;
+    margin-bottom: 0.1rem;
+    color: #888;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   .listing-popup .popup-notes {

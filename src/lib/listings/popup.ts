@@ -44,12 +44,12 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
         : ''
     }
     <div class="popup-meta">${formatListingTypeLabel(listing.type)} &middot; ${listing.cost ? capitalize(listing.cost) : 'Cost unknown'} &middot; ${formatVisibilityLabel(listing.visibility)}</div>
-    ${schedule ? `<div class="popup-row">When: ${schedule}</div>` : ''}
-    <div class="popup-row">Sign-up required: ${listing.signup_required === null ? 'Not specified' : listing.signup_required ? 'Yes' : 'No'}</div>
-    ${listing.min_skill_level ? `<div class="popup-row">Min skill: ${listing.min_skill_level}</div>` : ''}
-    ${listing.equipment_supplied !== null ? `<div class="popup-row">Equipment supplied: ${listing.equipment_supplied ? 'Yes' : 'No'}</div>` : ''}
-    ${listing.payment_types ? `<div class="popup-row">Payment: ${listing.payment_types}</div>` : ''}
-    ${listing.team_required !== null ? `<div class="popup-row">Team required: ${listing.team_required ? 'Yes' : 'No'}</div>` : ''}
+    ${schedule ? `<div class="popup-row"><span class="popup-label">When</span>${schedule}</div>` : ''}
+    <div class="popup-row"><span class="popup-label">Sign-up required</span>${listing.signup_required === null ? 'Not specified' : listing.signup_required ? 'Yes' : 'No'}</div>
+    ${listing.min_skill_level ? `<div class="popup-row"><span class="popup-label">Min skill</span>${listing.min_skill_level}</div>` : ''}
+    ${listing.equipment_supplied !== null ? `<div class="popup-row"><span class="popup-label">Equipment supplied</span>${listing.equipment_supplied ? 'Yes' : 'No'}</div>` : ''}
+    ${listing.payment_types ? `<div class="popup-row"><span class="popup-label">Payment</span>${listing.payment_types}</div>` : ''}
+    ${listing.team_required !== null ? `<div class="popup-row"><span class="popup-label">Team required</span>${listing.team_required ? 'Yes' : 'No'}</div>` : ''}
     ${listing.notes ? `<div class="popup-notes">${listing.notes}</div>` : ''}
     ${
       listing.external_link
