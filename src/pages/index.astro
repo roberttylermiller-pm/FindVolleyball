@@ -4,13 +4,13 @@ import Map from '../components/Map.astro';
 import Filters from '../components/Filters.astro';
 import ListView from '../components/ListView.astro';
 import LocationSearch from '../components/LocationSearch.astro';
-import WelcomeModal from '../components/WelcomeModal.astro';
+import IntroStrip from '../components/IntroStrip.astro';
 import Toast from '../components/Toast.astro';
 ---
 
 <BaseLayout hideFooter>
   <main>
-    <WelcomeModal />
+    <IntroStrip />
     <Toast />
     <div class="map-controls">
       <div class="map-controls-row">
@@ -50,13 +50,16 @@ import Toast from '../components/Toast.astro';
 <style>
   main {
     position: relative;
+    display: flex;
+    flex-direction: column;
     flex: 1;
     min-height: 0;
   }
 
   .map-layout {
     display: flex;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
   }
 
   .map-area {
@@ -68,7 +71,7 @@ import Toast from '../components/Toast.astro';
 
   .map-controls {
     position: fixed;
-    top: calc(var(--header-height) + 1rem);
+    top: calc(var(--header-height) + var(--intro-strip-height) + 1rem);
     left: 1rem;
     right: 1rem;
     z-index: 1000;

@@ -8,6 +8,12 @@
      (ROB-120) — the map page's filter/search overlay reads this var to
      sit just below the header. */
   --header-height: 3.5rem;
+  /* Same pattern as --header-height — the map page's IntroStrip.astro
+     keeps this synced to its own live rendered height (0 while hidden,
+     via ResizeObserver reporting 0x0 for a display:none element) so the
+     fixed-position search/filter overlay can sit below it without the
+     two overlapping (ROB-156). */
+  --intro-strip-height: 0px;
 }
 
 * {

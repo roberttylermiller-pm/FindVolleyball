@@ -1,0 +1,105 @@
+<div id="intro-strip" class="intro-strip" hidden>
+  <span class="intro-strip-badge" aria-hidden="true">🏐</span>
+  <div class="intro-strip-text">
+    <strong>A free, community powered map of local volleyball meetups, leagues and tournaments.</strong>
+    <span>Search and filter to find one nearby or add a listing you know about.</span>
+  </div>
+  <button type="button" id="intro-dismiss" aria-label="Dismiss">✕</button>
+</div>
+
+<style>
+  /* :not([hidden]) — a bare .intro-strip { display: flex } rule would
+     tie in specificity with the UA [hidden] rule and (per source order)
+     override it, showing the strip regardless of the hidden attribute. */
+  .intro-strip:not([hidden]) {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.9rem;
+    background: #1a1a1a;
+    border-bottom: 1px solid rgb(255 255 255 / 8%);
+  }
+
+  .intro-strip-badge {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    font-size: 1rem;
+    background: rgb(255 122 0 / 15%);
+    border-radius: 999px;
+  }
+
+  .intro-strip-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    flex: 1;
+    min-width: 0;
+
+    strong {
+      font-size: 0.85rem;
+      color: var(--color-accent);
+      letter-spacing: 0.01em;
+    }
+
+    span {
+      font-size: 0.78rem;
+      color: #bbb;
+      line-height: 1.4;
+    }
+  }
+
+  #intro-dismiss {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: 0.75rem;
+    color: #999;
+    background: rgb(255 255 255 / 8%);
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  #intro-dismiss:hover {
+    color: white;
+    background: rgb(255 255 255 / 16%);
+  }
+</style>
+
+<script>
+  const STORAGE_KEY = 'fv-welcome-seen';
+
+  const strip = document.querySelector<HTMLDivElement>('#intro-strip');
+  const dismissBtn = document.querySelector<HTMLButtonElement>('#intro-dismiss');
+
+  if (strip && !localStorage.getItem(STORAGE_KEY)) {
+    strip.hidden = false;
+  }
+
+  dismissBtn?.addEventListener('click', () => {
+    if (strip) strip.hidden = true;
+    localStorage.setItem(STORAGE_KEY, 'true');
+  });
+
+  // Keeps --intro-strip-height synced to the strip's real rendered
+  // height (same pattern Header.astro uses for --header-height) so
+  // index.astro's fixed-position search/filter bar can sit below it
+  // instead of overlapping. Reports 0 automatically once dismissed —
+  // [hidden] is display:none, and ResizeObserver reports a 0x0
+  // contentRect for that, no extra branching needed.
+  if (strip) {
+    const syncStripHeight = () => {
+      document.documentElement.style.setProperty('--intro-strip-height', `${strip.offsetHeight}px`);
+    };
+    new ResizeObserver(syncStripHeight).observe(strip);
+    syncStripHeight();
+  }
+</script>
