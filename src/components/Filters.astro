@@ -142,18 +142,28 @@
     };
   }
 
+  // ROB-159 — generalizes an earlier Kind-only-fills-Type special case:
+  // picking a value in any one category while another category has
+  // nothing checked would otherwise silently show zero results (e.g.
+  // Type + Kind + Day all set but Cost left empty from a prior Clear
+  // all). Whenever a checkbox is checked, every *other* category that's
+  // currently fully empty gets auto-selected in full — same "never let
+  // an empty category zero out the results" intent, just symmetric
+  // across all four groups instead of one hardcoded pair.
+  const FILTER_CATEGORIES = ['type', 'cost', 'kind', 'day'];
+
   container?.addEventListener('change', (event) => {
-    // Selecting a Kind while every Type is deselected (e.g. right after
-    // Clear all) would otherwise show zero results — re-select all
-    // Types so the newly-picked Kind actually surfaces listings.
     const target = event.target as HTMLInputElement;
-    if (target.name === 'kind' && target.checked) {
-      const typeInputs = container.querySelectorAll<HTMLInputElement>('input[name="type"]');
-      const noTypeSelected = Array.from(typeInputs).every((input) => !input.checked);
-      if (noTypeSelected) {
-        typeInputs.forEach((input) => {
-          input.checked = true;
-        });
+    if (target.checked) {
+      for (const category of FILTER_CATEGORIES) {
+        if (category === target.name) continue;
+        const inputs = container.querySelectorAll<HTMLInputElement>(`input[name="${category}"]`);
+        const noneSelected = Array.from(inputs).every((input) => !input.checked);
+        if (noneSelected) {
+          inputs.forEach((input) => {
+            input.checked = true;
+          });
+        }
       }
     }
 
