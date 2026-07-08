@@ -7,6 +7,7 @@ import { formatListingKindLabel } from './kindLabel';
 import { formatVisibilityLabel } from './visibility';
 import { isEmailAddress, buildExternalLinkHref, getExternalLinkLabel } from './externalLink';
 import { buildMapsHref, formatAddressDisplay } from './address';
+import { logExternalLinkClick } from '../analytics/logExternalLinkClick';
 import type { Listing } from '../../types/listing';
 
 // Builds a real DOM element (not an HTML string) so vote/report buttons
@@ -97,6 +98,10 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
 
   voteUp?.addEventListener('click', () => castVote('up'));
   voteDown?.addEventListener('click', () => castVote('down'));
+
+  container.querySelector<HTMLAnchorElement>('.popup-link')?.addEventListener('click', () => {
+    logExternalLinkClick(listing.id);
+  });
 
   const reportToggle = container.querySelector<HTMLButtonElement>('.popup-report-toggle');
   const reportForm = container.querySelector<HTMLFormElement>('.popup-report-form');

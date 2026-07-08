@@ -49,6 +49,12 @@ const DAYS: Array<{ value: string; label: string }> = [
         </div>
         <div id="all-listings-list"></div>
       </section>
+
+      <section>
+        <h2>External link clicks</h2>
+        <p class="section-hint">Not filtered by the Recurring/Tournament/League tabs above — every listing's clicks show here.</p>
+        <div id="link-clicks-list"></div>
+      </section>
     </section>
   </main>
 
@@ -313,6 +319,38 @@ const DAYS: Array<{ value: string; label: string }> = [
         font-size: 0.8rem;
         border: 1px solid #ccc;
         border-radius: var(--radius-sharp);
+      }
+    }
+
+    .section-hint {
+      margin: -0.25rem 0 0.5rem;
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .click-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.6rem 0.75rem;
+      margin-bottom: 0.5rem;
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: var(--radius-sharp);
+      font-size: 0.875rem;
+
+      .click-row-meta {
+        font-size: 0.8rem;
+        color: #666;
+      }
+
+      .click-row-count {
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--color-accent);
+        white-space: nowrap;
       }
     }
 
@@ -630,6 +668,17 @@ const DAYS: Array<{ value: string; label: string }> = [
   const pendingList = document.querySelector<HTMLDivElement>('#pending-list');
   const reportsList = document.querySelector<HTMLDivElement>('#reports-list');
   const allListingsList = document.querySelector<HTMLDivElement>('#all-listings-list');
+  const linkClicksList = document.querySelector<HTMLDivElement>('#link-clicks-list');
+
+  interface LinkClickRow {
+    listingId: string;
+    name: string | null;
+    type: string;
+    slug: string | null;
+    listingKind: string;
+    count: number;
+    lastClickedAt: string;
+  }
 
   interface Report {
     id: string;
@@ -787,11 +836,33 @@ const DAYS: Array<{ value: string; label: string }> = [
       .join('');
   }
 
+  function renderLinkClicks(clicks: LinkClickRow[]) {
+    if (!linkClicksList) return;
+    if (clicks.length === 0) {
+      linkClicksList.innerHTML = '<p class="empty-state">No external link clicks recorded yet.</p>';
+      return;
+    }
+
+    linkClicksList.innerHTML = clicks
+      .map(
+        (click) => `
+        <div class="click-row">
+          <div>
+            ${click.name ?? `${formatListingTypeLabel(click.type as FullListing['type'])} listing`}
+            <div class="click-row-meta">${click.listingKind} · last clicked ${new Date(click.lastClickedAt).toLocaleDateString()}</div>
+          </div>
+          <span class="click-row-count">${click.count} click${click.count === 1 ? '' : 's'}</span>
+        </div>`,
+      )
+      .join('');
+  }
+
   async function loadDashboard() {
-    const [pendingRes, reportsRes, allRes] = await Promise.all([
+    const [pendingRes, reportsRes, allRes, linkClicksRes] = await Promise.all([
       apiFetch('/api/admin/listings?status=pending'),
       apiFetch('/api/admin/reports'),
       apiFetch('/api/admin/listings'),
+      apiFetch('/api/admin/analytics/external-link-clicks'),
     ]);
 
     if (pendingRes.status === 401 || pendingRes.status === 403) {
@@ -802,6 +873,7 @@ const DAYS: Array<{ value: string; label: string }> = [
     const { listings: pending } = await pendingRes.json();
     const { reports } = await reportsRes.json();
     const { listings: all } = await allRes.json();
+    const { clicks } = linkClicksRes.ok ? await linkClicksRes.json() : { clicks: [] };
 
     if (content) content.hidden = false;
     if (statusMessage) statusMessage.textContent = '';
@@ -816,6 +888,7 @@ const DAYS: Array<{ value: string; label: string }> = [
     allListingsCache = all ?? [];
 
     renderDashboard();
+    renderLinkClicks(clicks ?? []);
   }
 
   // Re-renders all three sections from the cached fetches, filtered down

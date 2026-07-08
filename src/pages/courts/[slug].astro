@@ -109,6 +109,7 @@ const structuredData = buildListingStructuredData(listing, Astro.url.href);
     {listing.external_link && (
       <p>
         <a
+          id="external-link"
           href={buildExternalLinkHref(listing.external_link)}
           target={isEmailAddress(listing.external_link) ? undefined : '_blank'}
           rel={isEmailAddress(listing.external_link) ? undefined : 'noopener noreferrer'}
@@ -315,8 +316,14 @@ const structuredData = buildListingStructuredData(listing, Astro.url.href);
 </style>
 
 <script>
+  import { logExternalLinkClick } from '../../lib/analytics/logExternalLinkClick';
+
   const main = document.querySelector<HTMLElement>('.court-page');
   const listingId = main?.dataset.listingId;
+
+  document.querySelector<HTMLAnchorElement>('#external-link')?.addEventListener('click', () => {
+    if (listingId) logExternalLinkClick(listingId);
+  });
 
   const voteUp = document.querySelector<HTMLButtonElement>('#vote-up');
   const voteDown = document.querySelector<HTMLButtonElement>('#vote-down');
