@@ -22,39 +22,43 @@ const DAYS: Array<{ value: string; label: string }> = [
         <button type="button" class="admin-tab" data-kind="recurring" role="tab" aria-selected="true">Recurring</button>
         <button type="button" class="admin-tab" data-kind="tournament" role="tab" aria-selected="false">Tournament</button>
         <button type="button" class="admin-tab" data-kind="league" role="tab" aria-selected="false">League</button>
+        <button type="button" class="admin-tab" data-kind="logs" role="tab" aria-selected="false">Logs</button>
       </div>
 
-      <section>
-        <h2>Pending review</h2>
-        <div id="pending-list"></div>
-      </section>
+      <div id="kind-content">
+        <section>
+          <h2>Pending review</h2>
+          <div id="pending-list"></div>
+        </section>
 
-      <section>
-        <h2>Reports</h2>
-        <div id="reports-list"></div>
-      </section>
+        <section>
+          <h2>Reports</h2>
+          <div id="reports-list"></div>
+        </section>
 
-      <section>
-        <div class="section-header">
-          <h2>All listings</h2>
-          <label class="sort-label">
-            Sort by
-            <select id="all-listings-sort">
-              <option value="date-desc">Date added (newest first)</option>
-              <option value="date-asc">Date added (oldest first)</option>
-              <option value="alpha">Alphabetical</option>
-              <option value="upvoted">Last upvoted</option>
-            </select>
-          </label>
-        </div>
-        <div id="all-listings-list"></div>
-      </section>
+        <section>
+          <div class="section-header">
+            <h2>All listings</h2>
+            <label class="sort-label">
+              Sort by
+              <select id="all-listings-sort">
+                <option value="date-desc">Date added (newest first)</option>
+                <option value="date-asc">Date added (oldest first)</option>
+                <option value="alpha">Alphabetical</option>
+                <option value="upvoted">Last upvoted</option>
+              </select>
+            </label>
+          </div>
+          <div id="all-listings-list"></div>
+        </section>
+      </div>
 
-      <section>
-        <h2>External link clicks</h2>
-        <p class="section-hint">Not filtered by the Recurring/Tournament/League tabs above — every listing's clicks show here.</p>
-        <div id="link-clicks-list"></div>
-      </section>
+      <div id="logs-content" hidden>
+        <section>
+          <h2>External link clicks</h2>
+          <div id="link-clicks-list"></div>
+        </section>
+      </div>
     </section>
   </main>
 
@@ -320,12 +324,6 @@ const DAYS: Array<{ value: string; label: string }> = [
         border: 1px solid #ccc;
         border-radius: var(--radius-sharp);
       }
-    }
-
-    .section-hint {
-      margin: -0.25rem 0 0.5rem;
-      font-size: 0.8rem;
-      color: #666;
     }
 
     .click-row {
@@ -907,13 +905,19 @@ const DAYS: Array<{ value: string; label: string }> = [
     );
   }
 
+  const kindContent = document.querySelector<HTMLDivElement>('#kind-content');
+  const logsContent = document.querySelector<HTMLDivElement>('#logs-content');
+
   for (const tabBtn of document.querySelectorAll<HTMLButtonElement>('.admin-tab')) {
     tabBtn.addEventListener('click', () => {
       activeKind = tabBtn.dataset.kind ?? 'recurring';
       for (const btn of document.querySelectorAll<HTMLButtonElement>('.admin-tab')) {
         btn.setAttribute('aria-selected', String(btn === tabBtn));
       }
-      renderDashboard();
+      const isLogs = activeKind === 'logs';
+      if (kindContent) kindContent.hidden = isLogs;
+      if (logsContent) logsContent.hidden = !isLogs;
+      if (!isLogs) renderDashboard();
     });
   }
 
