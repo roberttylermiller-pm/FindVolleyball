@@ -383,7 +383,20 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   if (!isRestoringState && 'geolocation' in navigator) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        map.setView([position.coords.latitude, position.coords.longitude], USER_LOCATION_ZOOM);
+        // animate: false — an animated pan here left Leaflet.markercluster's
+        // rendering stuck with no visible icons at the destination on some
+        // mobile devices (reported: LA default view shows pins, pans to the
+        // visitor's real location, pins vanish until the map is nudged).
+        // Same reasoning as the popupopen correction below: landing
+        // instantly sidesteps the animation-interrupted-mid-flight class of
+        // bug entirely, rather than trying to catch it after the fact.
+        // renderMarkers/currentFilters are declared later in this same
+        // script, but that's fine — this callback only ever runs once the
+        // whole module has finished its synchronous body, well after both
+        // are assigned.
+        map.setView([position.coords.latitude, position.coords.longitude], USER_LOCATION_ZOOM, { animate: false });
+        renderMarkers(currentFilters);
+        scheduleListUpdate();
       },
       () => {
         // Permission denied, unavailable, or timed out — no-op.
