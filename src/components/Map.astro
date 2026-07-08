@@ -354,9 +354,23 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
   // so the newly-revealed area stays blank/grey until something tells
   // it to re-measure. Same fix as Header.astro's --header-height sync:
   // watch the container itself rather than guess when this happens.
+  //
+  // Also re-triggers the list update: updateListResults() bails out
+  // silently whenever map.getSize() reads 0×0 (see its own comment
+  // below), which real mobile devices can hit for a moment right after
+  // load — e.g. the listings fetch resolving and calling it while the
+  // viewport/toolbar animation hasn't settled yet. Geolocation's own
+  // pan to the visitor's location fires a moveend too, but often
+  // *before* the listings have loaded, so that update is empty. Without
+  // this, nothing ever calls updateListResults() again until the
+  // visitor manually pans (ROB reported: map centers on their location
+  // but shows no listings until nudged).
   const mapContainer = document.getElementById('map');
   if (mapContainer) {
-    new ResizeObserver(() => map.invalidateSize()).observe(mapContainer);
+    new ResizeObserver(() => {
+      map.invalidateSize();
+      scheduleListUpdate();
+    }).observe(mapContainer);
   }
 
   // Re-centers on the visitor's own location once geolocation resolves
