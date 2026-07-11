@@ -43,113 +43,115 @@ import DayTimePicker from '../components/DayTimePicker.astro';
         </div>
       </div>
 
-      <fieldset>
-        <legend>Cost</legend>
-        <label><input type="radio" name="cost" value="" checked /> Not specified</label>
-        <label><input type="radio" name="cost" value="free" /> Free</label>
-        <label><input type="radio" name="cost" value="paid" /> Paid</label>
-      </fieldset>
-
-      <label id="payment-types-field" hidden>
-        Cost amount / payment method
-        <input type="text" name="payment_types" maxlength="100" placeholder="e.g. &quot;$10 cash only&quot; or &quot;$5/session via Venmo&quot;" />
-      </label>
-
       <LocationPicker />
 
-      <label>
-        Google Maps link (optional)
-        <input type="text" name="google_maps_url" placeholder="https://www.google.com/maps/place/..." />
-        <span class="field-hint">If the address search above doesn't find the exact spot, paste the venue's Google Maps link here instead.</span>
-      </label>
+      <details class="optional-fields">
+        <summary>More details (optional)</summary>
 
-      <div class="days-time-section">
-        <DayTimePicker />
-      </div>
+        <fieldset>
+          <legend>Cost</legend>
+          <label><input type="radio" name="cost" value="" checked /> Not specified</label>
+          <label><input type="radio" name="cost" value="free" /> Free</label>
+          <label><input type="radio" name="cost" value="paid" /> Paid</label>
+        </fieldset>
 
-      <fieldset>
-        <legend>Sign-ups required in advance?</legend>
-        <label><input type="radio" name="signup_required" value="" checked /> Not specified</label>
-        <label><input type="radio" name="signup_required" value="yes" /> Yes</label>
-        <label><input type="radio" name="signup_required" value="no" /> No</label>
-      </fieldset>
+        <label id="payment-types-field" hidden>
+          Cost amount / payment method
+          <input type="text" name="payment_types" maxlength="100" placeholder="e.g. &quot;$10 cash only&quot; or &quot;$5/session via Venmo&quot;" />
+        </label>
 
-      <hr />
+        <label>
+          Google Maps link
+          <input type="text" name="google_maps_url" placeholder="https://www.google.com/maps/place/..." />
+          <span class="field-hint">If the address search above doesn't find the exact spot, paste the venue's Google Maps link here instead.</span>
+        </label>
 
-      <label>
-        Name (optional)
-        <input type="text" name="name" />
-      </label>
-
-      <div class="league-only" hidden>
-        <div class="field-row">
-          <label>
-            Start month (optional)
-            <input type="month" name="start_month" />
-          </label>
-          <label>
-            End month (optional)
-            <input type="month" name="end_month" />
-          </label>
+        <div class="days-time-section">
+          <DayTimePicker />
         </div>
-        <p class="field-hint">
-          Leave blank if you'd rather just note there's an ongoing league and point people to your site for exact
-          dates.
-        </p>
-      </div>
-
-      <label>
-        Event link or contact email (optional)
-        <input type="text" name="external_link" placeholder="https://meetup.com/... or your email" />
-        <span class="field-hint">A signup/event page link, or an email if you don't have one.</span>
-      </label>
-
-      <label>
-        Minimum skill level (optional)
-        <select name="min_skill_level">
-          <option value="">No minimum</option>
-          <option value="C">C</option>
-          <option value="B">B</option>
-          <option value="BB">BB</option>
-          <option value="A">A</option>
-          <option value="AA">AA</option>
-        </select>
-      </label>
-
-      <div class="recurring-only">
-        <fieldset>
-          <legend>Equipment supplied? (optional)</legend>
-          <label><input type="radio" name="equipment_supplied" value="" checked /> Not specified</label>
-          <label><input type="radio" name="equipment_supplied" value="yes" /> Yes</label>
-          <label><input type="radio" name="equipment_supplied" value="no" /> No</label>
-        </fieldset>
 
         <fieldset>
-          <legend>Team required on signup? (optional)</legend>
-          <label><input type="radio" name="team_required" value="" checked /> Not specified</label>
-          <label><input type="radio" name="team_required" value="yes" /> Yes</label>
-          <label><input type="radio" name="team_required" value="no" /> No</label>
+          <legend>Sign-ups required in advance?</legend>
+          <label><input type="radio" name="signup_required" value="" checked /> Not specified</label>
+          <label><input type="radio" name="signup_required" value="yes" /> Yes</label>
+          <label><input type="radio" name="signup_required" value="no" /> No</label>
         </fieldset>
-      </div>
 
-      <label>
-        Additional notes (optional, 250 char max)
-        <textarea name="notes" maxlength="250"></textarea>
-      </label>
+        <label>
+          Name
+          <input type="text" name="name" />
+        </label>
 
-      <label>
-        Photo (optional)
-        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" />
-        <span class="field-hint">JPEG, PNG, or WebP — 5MB max</span>
-      </label>
+        <div class="league-only" hidden>
+          <div class="field-row">
+            <label>
+              Start month
+              <input type="month" name="start_month" />
+            </label>
+            <label>
+              End month
+              <input type="month" name="end_month" />
+            </label>
+          </div>
+          <p class="field-hint">
+            Leave blank if you'd rather just note there's an ongoing league and point people to your site for exact
+            dates.
+          </p>
+        </div>
 
-      <div class="recurring-only">
-        <fieldset>
-          <legend>Visibility</legend>
-          <label><input type="radio" name="visibility" value="public" checked /> Public (Open Gym)</label>
-          <label><input type="radio" name="visibility" value="private" /> Private (Club)</label>
-        </fieldset>
-      </div>
+        <label>
+          Event link or contact email
+          <input type="text" name="external_link" placeholder="https://meetup.com/... or your email" />
+          <span class="field-hint">A signup/event page link, or an email if you don't have one.</span>
+        </label>
+
+        <label>
+          Minimum skill level
+          <select name="min_skill_level">
+            <option value="">No minimum</option>
+            <option value="C">C</option>
+            <option value="B">B</option>
+            <option value="BB">BB</option>
+            <option value="A">A</option>
+            <option value="AA">AA</option>
+          </select>
+        </label>
+
+        <div class="recurring-only">
+          <fieldset>
+            <legend>Equipment supplied?</legend>
+            <label><input type="radio" name="equipment_supplied" value="" checked /> Not specified</label>
+            <label><input type="radio" name="equipment_supplied" value="yes" /> Yes</label>
+            <label><input type="radio" name="equipment_supplied" value="no" /> No</label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Team required on signup?</legend>
+            <label><input type="radio" name="team_required" value="" checked /> Not specified</label>
+            <label><input type="radio" name="team_required" value="yes" /> Yes</label>
+            <label><input type="radio" name="team_required" value="no" /> No</label>
+          </fieldset>
+        </div>
+
+        <label>
+          Additional notes (250 char max)
+          <textarea name="notes" maxlength="250"></textarea>
+        </label>
+
+        <label>
+          Photo
+          <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" />
+          <span class="field-hint">JPEG, PNG, or WebP — 5MB max</span>
+        </label>
+
+        <div class="recurring-only">
+          <fieldset>
+            <legend>Visibility</legend>
+            <label><input type="radio" name="visibility" value="public" checked /> Public (Open Gym)</label>
+            <label><input type="radio" name="visibility" value="private" /> Private (Club)</label>
+          </fieldset>
+        </div>
+      </details>
 
       <button type="submit">Submit listing</button>
     </form>
@@ -218,6 +220,28 @@ import DayTimePicker from '../components/DayTimePicker.astro';
 
     #payment-types-field[hidden] {
       display: none;
+    }
+
+    .optional-fields {
+      summary {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #666;
+        cursor: pointer;
+      }
+
+      &[open] summary {
+        margin-bottom: 1.25rem;
+      }
+
+      &[open] {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
     }
 
     .tournament-only[hidden],
