@@ -45,6 +45,16 @@ import DayTimePicker from '../components/DayTimePicker.astro';
 
       <LocationPicker />
 
+      <div class="days-time-section">
+        <DayTimePicker />
+      </div>
+
+      <label>
+        Event link or contact email
+        <input type="text" name="external_link" placeholder="https://meetup.com/... or your email" />
+        <span class="field-hint">A signup/event page link, or an email if you don't have one.</span>
+      </label>
+
       <details class="optional-fields">
         <summary>More details (optional)</summary>
 
@@ -65,10 +75,6 @@ import DayTimePicker from '../components/DayTimePicker.astro';
           <input type="text" name="google_maps_url" placeholder="https://www.google.com/maps/place/..." />
           <span class="field-hint">If the address search above doesn't find the exact spot, paste the venue's Google Maps link here instead.</span>
         </label>
-
-        <div class="days-time-section">
-          <DayTimePicker />
-        </div>
 
         <fieldset>
           <legend>Sign-ups required in advance?</legend>
@@ -98,12 +104,6 @@ import DayTimePicker from '../components/DayTimePicker.astro';
             dates.
           </p>
         </div>
-
-        <label>
-          Event link or contact email
-          <input type="text" name="external_link" placeholder="https://meetup.com/... or your email" />
-          <span class="field-hint">A signup/event page link, or an email if you don't have one.</span>
-        </label>
 
         <label>
           Minimum skill level
