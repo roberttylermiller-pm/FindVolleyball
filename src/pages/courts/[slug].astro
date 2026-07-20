@@ -79,8 +79,12 @@ const structuredData = buildListingStructuredData(listing, Astro.url.href);
           </>
         )
       )}
-      <dt>Sign-up required</dt>
-      <dd>{listing.signup_required === null ? 'Not specified' : listing.signup_required ? 'Yes' : 'No'}</dd>
+      {listing.listing_kind === 'recurring' && (
+        <>
+          <dt>Sign-up required</dt>
+          <dd>{listing.signup_required === null ? 'Not specified' : listing.signup_required ? 'Yes' : 'No'}</dd>
+        </>
+      )}
       {listing.min_skill_level && (
         <>
           <dt>Minimum skill level</dt>

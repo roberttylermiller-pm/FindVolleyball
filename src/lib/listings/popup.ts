@@ -46,7 +46,14 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
     }
     <div class="popup-meta">${formatListingTypeLabel(listing.type)} &middot; ${listing.cost ? capitalize(listing.cost) : 'Cost unknown'} &middot; ${formatVisibilityLabel(listing.visibility)}</div>
     ${schedule ? `<div class="popup-row"><span class="popup-label">When</span>${schedule}</div>` : ''}
-    <div class="popup-row"><span class="popup-label">Sign-up required</span>${listing.signup_required === null ? 'Not specified' : listing.signup_required ? 'Yes' : 'No'}</div>
+    ${
+      // Tournaments/leagues always require signup to play in — showing
+      // "Sign-up required: Yes" on every single one is just noise, not
+      // information (ROB follow-up to the sign-up-required cleanup).
+      listing.listing_kind === 'recurring'
+        ? `<div class="popup-row"><span class="popup-label">Sign-up required</span>${listing.signup_required === null ? 'Not specified' : listing.signup_required ? 'Yes' : 'No'}</div>`
+        : ''
+    }
     ${listing.min_skill_level ? `<div class="popup-row"><span class="popup-label">Min skill</span>${listing.min_skill_level}</div>` : ''}
     ${listing.equipment_supplied !== null ? `<div class="popup-row"><span class="popup-label">Equipment supplied</span>${listing.equipment_supplied ? 'Yes' : 'No'}</div>` : ''}
     ${listing.payment_types ? `<div class="popup-row"><span class="popup-label">Payment</span>${listing.payment_types}</div>` : ''}
