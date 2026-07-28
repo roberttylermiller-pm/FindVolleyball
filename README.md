@@ -1,6 +1,6 @@
 # FindVolleyball
 
-A free, community-driven interactive map for finding local volleyball meetups — a curated alternative to listings scattered across Reclub, Meetup, Goodrec, and Facebook Groups.
+A free, community-driven interactive map for finding local volleyball meetups — a curated alternative to listings scattered across Reclub, Meetup, Goodrec, and Facebook Groups. Live at https://findvolleyball.app/ 
 
 Built and tracked under the working name "Play Volleyball" — renamed to FindVolleyball once that name turned out to be taken. Repo/Linear project names are legacy references to that working name.
 
