@@ -55,7 +55,18 @@ const DAYS: Array<{ value: string; label: string }> = [
 
       <div id="logs-content" hidden>
         <section>
-          <h2>External link clicks</h2>
+          <div class="section-header">
+            <h2>External link clicks</h2>
+            <label class="sort-label">
+              Sort by
+              <select id="link-clicks-sort">
+                <option value="clicks-desc">Number of clicks (most first)</option>
+                <option value="clicks-asc">Number of clicks (fewest first)</option>
+                <option value="date-desc">Last clicked (newest first)</option>
+                <option value="date-asc">Last clicked (oldest first)</option>
+              </select>
+            </label>
+          </div>
           <div id="link-clicks-list"></div>
         </section>
       </div>
@@ -696,8 +707,25 @@ const DAYS: Array<{ value: string; label: string }> = [
   let allListingsCache: FullListing[] = [];
   let pendingCache: FullListing[] = [];
   let reportsCache: Report[] = [];
+  let linkClicksCache: LinkClickRow[] = [];
   let activeKind = 'recurring';
   const allListingsSort = document.querySelector<HTMLSelectElement>('#all-listings-sort');
+  const linkClicksSort = document.querySelector<HTMLSelectElement>('#link-clicks-sort');
+
+  function sortLinkClicks(clicks: LinkClickRow[], sortBy: string): LinkClickRow[] {
+    const sorted = [...clicks];
+    switch (sortBy) {
+      case 'clicks-asc':
+        return sorted.sort((a, b) => a.count - b.count);
+      case 'date-desc':
+        return sorted.sort((a, b) => b.lastClickedAt.localeCompare(a.lastClickedAt));
+      case 'date-asc':
+        return sorted.sort((a, b) => a.lastClickedAt.localeCompare(b.lastClickedAt));
+      case 'clicks-desc':
+      default:
+        return sorted.sort((a, b) => b.count - a.count);
+    }
+  }
 
   function sortListings(listings: FullListing[], sortBy: string): FullListing[] {
     const sorted = [...listings];
@@ -884,10 +912,15 @@ const DAYS: Array<{ value: string; label: string }> = [
     pendingCache = pending ?? [];
     reportsCache = reports ?? [];
     allListingsCache = all ?? [];
+    linkClicksCache = clicks ?? [];
 
     renderDashboard();
-    renderLinkClicks(clicks ?? []);
+    renderLinkClicks(sortLinkClicks(linkClicksCache, linkClicksSort?.value ?? 'clicks-desc'));
   }
+
+  linkClicksSort?.addEventListener('change', () => {
+    renderLinkClicks(sortLinkClicks(linkClicksCache, linkClicksSort.value));
+  });
 
   // Re-renders all three sections from the cached fetches, filtered down
   // to whichever Kind tab is active (ROB-124) — listings of different
