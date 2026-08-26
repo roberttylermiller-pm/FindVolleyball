@@ -61,6 +61,8 @@ cp .env.example .env
 | `PUBLIC_SUPABASE_URL`          | Project Settings → API → Project URL           | Yes |
 | `PUBLIC_SUPABASE_ANON_KEY`     | Project Settings → API → anon/public key       | Yes |
 | `SUPABASE_SERVICE_ROLE_KEY`    | Project Settings → API → service_role key      | No — server-only, never commit |
+| `PUBLIC_CARTO_API_KEY`         | [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey) (free, no account) | Yes — domain-restricted, not a secret |
+| `RESEND_API_KEY`               | [resend.com](https://resend.com) (optional — admin email notifications) | No — server-only |
 
 ### Run the dev server
 
@@ -77,7 +79,7 @@ npm run build
 npm run preview
 ```
 
-**Deploying:** the build runs `getStaticPaths` against Supabase to generate `/courts/[slug]` pages, so the three env vars above must be set in the Vercel project (Settings → Environment Variables), not just your local `.env` — otherwise the build fails with `supabaseUrl is required`.
+**Deploying:** the build runs `getStaticPaths` against Supabase to generate `/courts/[slug]` pages, so the three Supabase env vars above must be set in the Vercel project (Settings → Environment Variables), not just your local `.env` — otherwise the build fails with `supabaseUrl is required`. `PUBLIC_CARTO_API_KEY` must be set there too — it's inlined into the client bundle at build time, so without it every visitor sees an "API KEY REQUIRED" watermark instead of the basemap.
 
 ### Database schema
 
