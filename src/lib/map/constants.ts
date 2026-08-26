@@ -11,10 +11,19 @@ export const DEFAULT_MAP_ZOOM = 11;
 // at all if the visitor isn't near existing listings.
 export const USER_LOCATION_ZOOM = 12;
 
-// CARTO Positron — a minimal light basemap (no topo contour lines, no
-// highway shield numbers) chosen over the default OSM "Carto" style for
-// a cleaner, less cluttered look. Free, no API key/account needed,
-// unlike Mapbox/Stadia/MapTiler alternatives.
-export const TILE_LAYER_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-export const TILE_LAYER_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+// CARTO Positron tiles (the previous basemap here) started requiring a
+// paid API key mid-2026 — anonymous requests now render with an
+// "API KEY REQUIRED" watermark instead of map tiles. Switched to Esri's
+// World Light Gray Canvas, a visually similar minimal light basemap
+// that's genuinely free with no account/key, split into two layers
+// (base + reference labels) the way Esri publishes it — both added to
+// the map in that order wherever TILE_LAYER_URL is used.
+export const TILE_LAYER_URL =
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+export const TILE_LABELS_URL =
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}';
+export const TILE_LAYER_ATTRIBUTION = '&copy; <a href="https://www.esri.com">Esri</a>';
+// Esri only renders these canvas tiles up to z16 — Leaflet's
+// maxNativeZoom upscales that last tile for anything beyond it instead
+// of requesting (and 404ing on) tiles that don't exist server-side.
+export const TILE_LAYER_MAX_NATIVE_ZOOM = 16;
