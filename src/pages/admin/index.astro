@@ -54,16 +54,29 @@ const DAYS: Array<{ value: string; label: string }> = [
       </div>
 
       <div id="logs-content" hidden>
+        <section class="day-summary-card">
+          <div class="section-header">
+            <h2>Daily summary</h2>
+            <div class="day-nav">
+              <button type="button" id="day-summary-prev" aria-label="Previous day">←</button>
+              <input type="date" id="day-summary-date" />
+              <button type="button" id="day-summary-next" aria-label="Next day">→</button>
+              <button type="button" id="day-summary-today">Today</button>
+            </div>
+          </div>
+          <div id="day-summary-list"></div>
+        </section>
+
         <section>
           <div class="section-header">
             <h2>External link clicks</h2>
             <label class="sort-label">
               Sort by
               <select id="link-clicks-sort">
-                <option value="clicks-desc">Number of clicks (most first)</option>
-                <option value="clicks-asc">Number of clicks (fewest first)</option>
                 <option value="date-desc">Last clicked (newest first)</option>
                 <option value="date-asc">Last clicked (oldest first)</option>
+                <option value="clicks-desc">Number of clicks (most first)</option>
+                <option value="clicks-asc">Number of clicks (fewest first)</option>
               </select>
             </label>
           </div>
@@ -361,6 +374,47 @@ const DAYS: Array<{ value: string; label: string }> = [
         color: var(--color-accent);
         white-space: nowrap;
       }
+    }
+
+    .day-summary-card {
+      padding: 1rem;
+      background: #f7f7f7;
+      border: 1px solid #e5e5e5;
+      border-radius: var(--radius-sharp);
+    }
+
+    .day-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+
+      button {
+        padding: 0.3rem 0.6rem;
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #444;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: var(--radius-sharp);
+        cursor: pointer;
+      }
+
+      input[type="date"] {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+        border: 1px solid #ccc;
+        border-radius: var(--radius-sharp);
+      }
+    }
+
+    .day-summary-total {
+      margin: 0.75rem 0 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #444;
     }
 
     .listing-row {
@@ -689,6 +743,10 @@ const DAYS: Array<{ value: string; label: string }> = [
     lastClickedAt: string;
   }
 
+  // Same shape as LinkClickRow minus lastClickedAt — a day's breakdown
+  // doesn't need it, every row in it already happened on that day.
+  type DayClickRow = Omit<LinkClickRow, 'lastClickedAt'>;
+
   interface Report {
     id: string;
     listing_id: string;
@@ -708,9 +766,84 @@ const DAYS: Array<{ value: string; label: string }> = [
   let pendingCache: FullListing[] = [];
   let reportsCache: Report[] = [];
   let linkClicksCache: LinkClickRow[] = [];
+  let clicksByDate: Record<string, DayClickRow[]> = {};
   let activeKind = 'recurring';
   const allListingsSort = document.querySelector<HTMLSelectElement>('#all-listings-sort');
   const linkClicksSort = document.querySelector<HTMLSelectElement>('#link-clicks-sort');
+  const daySummaryDate = document.querySelector<HTMLInputElement>('#day-summary-date');
+  const daySummaryList = document.querySelector<HTMLDivElement>('#day-summary-list');
+
+  // Local calendar date as "YYYY-MM-DD" — matches what <input type="date">
+  // reads/writes, so "today" and the prev/next steppers stay in the
+  // visitor's own timezone rather than UTC's.
+  function todayDateString(): string {
+    const now = new Date();
+    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+    return new Date(now.getTime() - offsetMs).toISOString().slice(0, 10);
+  }
+
+  function shiftDateString(dateStr: string, days: number): string {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() + days);
+    const yy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yy}-${mm}-${dd}`;
+  }
+
+  function renderDaySummary(dateStr: string) {
+    if (!daySummaryList) return;
+    // byDate is keyed by the UTC calendar date each click's created_at
+    // falls on (see the API route) — close enough to the visitor's own
+    // date for an admin-only glance view, not worth reconciling
+    // timezones just for this.
+    const dayRows = clicksByDate[dateStr] ?? [];
+    if (dayRows.length === 0) {
+      daySummaryList.innerHTML = '<p class="empty-state">No external link clicks on this date.</p>';
+      return;
+    }
+
+    const total = dayRows.reduce((sum, row) => sum + row.count, 0);
+    daySummaryList.innerHTML =
+      `<p class="day-summary-total">${total} click${total === 1 ? '' : 's'} across ${dayRows.length} listing${dayRows.length === 1 ? '' : 's'}</p>` +
+      dayRows
+        .map(
+          (row) => `
+        <div class="click-row">
+          <div>
+            ${row.name ?? `${formatListingTypeLabel(row.type as FullListing['type'])} listing`}
+            <div class="click-row-meta">${row.listingKind}</div>
+          </div>
+          <span class="click-row-count">${row.count} click${row.count === 1 ? '' : 's'}</span>
+        </div>`,
+        )
+        .join('');
+  }
+
+  if (daySummaryDate) daySummaryDate.value = todayDateString();
+
+  document.querySelector('#day-summary-today')?.addEventListener('click', () => {
+    if (!daySummaryDate) return;
+    daySummaryDate.value = todayDateString();
+    renderDaySummary(daySummaryDate.value);
+  });
+
+  document.querySelector('#day-summary-prev')?.addEventListener('click', () => {
+    if (!daySummaryDate) return;
+    daySummaryDate.value = shiftDateString(daySummaryDate.value, -1);
+    renderDaySummary(daySummaryDate.value);
+  });
+
+  document.querySelector('#day-summary-next')?.addEventListener('click', () => {
+    if (!daySummaryDate) return;
+    daySummaryDate.value = shiftDateString(daySummaryDate.value, 1);
+    renderDaySummary(daySummaryDate.value);
+  });
+
+  daySummaryDate?.addEventListener('change', () => {
+    renderDaySummary(daySummaryDate.value);
+  });
 
   function sortLinkClicks(clicks: LinkClickRow[], sortBy: string): LinkClickRow[] {
     const sorted = [...clicks];
@@ -899,7 +1032,7 @@ const DAYS: Array<{ value: string; label: string }> = [
     const { listings: pending } = await pendingRes.json();
     const { reports } = await reportsRes.json();
     const { listings: all } = await allRes.json();
-    const { clicks } = linkClicksRes.ok ? await linkClicksRes.json() : { clicks: [] };
+    const { clicks, byDate } = linkClicksRes.ok ? await linkClicksRes.json() : { clicks: [], byDate: {} };
 
     if (content) content.hidden = false;
     if (statusMessage) statusMessage.textContent = '';
@@ -913,9 +1046,11 @@ const DAYS: Array<{ value: string; label: string }> = [
     reportsCache = reports ?? [];
     allListingsCache = all ?? [];
     linkClicksCache = clicks ?? [];
+    clicksByDate = byDate ?? {};
 
     renderDashboard();
-    renderLinkClicks(sortLinkClicks(linkClicksCache, linkClicksSort?.value ?? 'clicks-desc'));
+    renderLinkClicks(sortLinkClicks(linkClicksCache, linkClicksSort?.value ?? 'date-desc'));
+    renderDaySummary(daySummaryDate?.value ?? todayDateString());
   }
 
   linkClicksSort?.addEventListener('change', () => {
