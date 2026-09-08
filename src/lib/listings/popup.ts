@@ -36,7 +36,7 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
     </div>
     ${
       listing.decayed
-        ? '<div class="popup-decayed-notice">Not confirmed in over 60 days — it may no longer be happening. Vote below if you know it still is.</div>'
+        ? '<div class="popup-decayed-notice">Not confirmed for a while - it may no longer be happening. Vote below if you know it still is.</div>'
         : ''
     }
     ${
