@@ -32,7 +32,6 @@ export function buildListingPopupContent(listing: Listing): HTMLElement {
     <div class="popup-title-row">
       <strong class="popup-title">${title}</strong>
       <span class="popup-kind-badge popup-kind-${listing.listing_kind}">${formatListingKindLabel(listing.listing_kind)}</span>
-      ${listing.decayed ? '<span class="popup-decayed">Decayed</span>' : ''}
     </div>
     ${
       listing.decayed

@@ -133,18 +133,6 @@
     background: #8bd3a0;
   }
 
-  .list-card-decayed {
-    padding: 0.1rem 0.45rem;
-    font-family: var(--font-mono);
-    font-size: 0.6rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #856404;
-    background: #fff3cd;
-    border-radius: var(--radius-tag);
-  }
-
   .list-card-name {
     font-size: 0.9rem;
     line-height: 1.25;
@@ -234,7 +222,6 @@
             <strong class="list-card-name">${escapeHtml(name)}</strong>
             <span class="list-card-badges">
               <span class="list-card-kind">${formatListingKindLabel(listing.listing_kind)}</span>
-              ${listing.decayed ? '<span class="list-card-decayed">Decayed</span>' : ''}
             </span>
           </div>
           <span class="list-card-meta">${TYPE_BADGES[listing.type]} ${formatListingTypeLabel(listing.type)}${listing.city ? ` · ${escapeHtml(listing.city)}` : ''}</span>
