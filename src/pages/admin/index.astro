@@ -69,7 +69,7 @@ const DAYS: Array<{ value: string; label: string }> = [
 
         <section class="day-summary-card">
           <div class="section-header">
-            <h2>List view usage</h2>
+            <h2>Usage</h2>
           </div>
           <div id="usage-events-list"></div>
         </section>
@@ -1032,6 +1032,7 @@ const DAYS: Array<{ value: string; label: string }> = [
     const rows: Array<[string, string]> = [
       ['list_opened', 'List opened'],
       ['list_card_clicked', 'List card clicked'],
+      ['listing_upvoted', 'Listing upvoted'],
     ];
 
     usageEventsList.innerHTML = rows

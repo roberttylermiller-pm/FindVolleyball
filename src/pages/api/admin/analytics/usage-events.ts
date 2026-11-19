@@ -27,5 +27,22 @@ export const GET: APIRoute = async ({ request }) => {
     byDate[dateKey][row.event] = (byDate[dateKey][row.event] ?? 0) + 1;
   }
 
+  // Upvotes live in the existing votes table (not usage_events), so fold
+  // them into the same per-day shape under a synthetic event name.
+  const { data: upvotes, error: votesError } = await supabaseAdmin
+    .from('votes')
+    .select('created_at')
+    .eq('vote_type', 'up');
+
+  if (votesError) {
+    return new Response(JSON.stringify({ error: votesError.message }), { status: 500 });
+  }
+
+  for (const row of upvotes ?? []) {
+    const dateKey = (row.created_at as string).slice(0, 10);
+    byDate[dateKey] ??= {};
+    byDate[dateKey].listing_upvoted = (byDate[dateKey].listing_upvoted ?? 0) + 1;
+  }
+
   return new Response(JSON.stringify({ byDate }), { headers: { 'content-type': 'application/json' } });
 };
