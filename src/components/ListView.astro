@@ -193,6 +193,7 @@
 
 <script>
   import { LISTING_RESULTS_EVENT, LISTING_SELECT_EVENT } from '../lib/map/events';
+  import { logUsageEvent } from '../lib/analytics/logUsageEvent';
   import type { ListingSelectDetail } from '../lib/map/events';
   import { formatListingTypeLabel } from '../lib/listings/typeLabel';
   import { formatListingKindLabel } from '../lib/listings/kindLabel';
@@ -262,6 +263,8 @@
   resultsEl?.addEventListener('click', (event) => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.list-card');
     if (!button?.dataset.id) return;
+
+    logUsageEvent('list_card_clicked');
 
     if (window.innerWidth < 768) {
       const panel = document.querySelector<HTMLElement>('#list-panel');

@@ -209,6 +209,7 @@ import Toast from '../components/Toast.astro';
 
 <script>
   import { LISTING_RESULTS_EVENT } from '../lib/map/events';
+  import { logUsageEvent } from '../lib/analytics/logUsageEvent';
 
   const filtersToggle = document.querySelector<HTMLButtonElement>('#filters-toggle');
   const filtersPanel = document.querySelector<HTMLDivElement>('#filters-panel');
@@ -248,7 +249,10 @@ import Toast from '../components/Toast.astro';
     const expanded = listPanel?.classList.toggle('expanded') ?? false;
     listToggle.setAttribute('aria-expanded', String(expanded));
     if (listLabel) listLabel.textContent = expanded ? 'Map' : 'List';
-    if (expanded) collapseFilters();
+    if (expanded) {
+      collapseFilters();
+      logUsageEvent('list_opened');
+    }
   });
 
   // Restore list view state when returning via browser back from a listing

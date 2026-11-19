@@ -67,6 +67,13 @@ const DAYS: Array<{ value: string; label: string }> = [
           <div id="day-summary-list"></div>
         </section>
 
+        <section class="day-summary-card">
+          <div class="section-header">
+            <h2>List view usage</h2>
+          </div>
+          <div id="usage-events-list"></div>
+        </section>
+
         <section>
           <div class="section-header">
             <h2>External link clicks</h2>
@@ -1016,12 +1023,44 @@ const DAYS: Array<{ value: string; label: string }> = [
       .join('');
   }
 
+  const usageEventsList = document.querySelector<HTMLDivElement>('#usage-events-list');
+
+  function renderUsageEvents(byDate: Record<string, Record<string, number>>) {
+    if (!usageEventsList) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const weekAgo = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+    const rows: Array<[string, string]> = [
+      ['list_opened', 'List opened'],
+      ['list_card_clicked', 'List card clicked'],
+    ];
+
+    usageEventsList.innerHTML = rows
+      .map(([event, label]) => {
+        let todayCount = 0;
+        let weekCount = 0;
+        let allCount = 0;
+        for (const [date, counts] of Object.entries(byDate)) {
+          const n = counts[event] ?? 0;
+          allCount += n;
+          if (date >= weekAgo) weekCount += n;
+          if (date === today) todayCount += n;
+        }
+        return `
+        <div class="click-row">
+          <div>${label}</div>
+          <span class="click-row-count">${todayCount} today · ${weekCount} last 7 days · ${allCount} all time</span>
+        </div>`;
+      })
+      .join('');
+  }
+
   async function loadDashboard() {
-    const [pendingRes, reportsRes, allRes, linkClicksRes] = await Promise.all([
+    const [pendingRes, reportsRes, allRes, linkClicksRes, usageRes] = await Promise.all([
       apiFetch('/api/admin/listings?status=pending'),
       apiFetch('/api/admin/reports'),
       apiFetch('/api/admin/listings'),
       apiFetch('/api/admin/analytics/external-link-clicks'),
+      apiFetch('/api/admin/analytics/usage-events'),
     ]);
 
     if (pendingRes.status === 401 || pendingRes.status === 403) {
@@ -1051,6 +1090,8 @@ const DAYS: Array<{ value: string; label: string }> = [
     renderDashboard();
     renderLinkClicks(sortLinkClicks(linkClicksCache, linkClicksSort?.value ?? 'date-desc'));
     renderDaySummary(daySummaryDate?.value ?? todayDateString());
+    const { byDate: usageByDate } = usageRes.ok ? await usageRes.json() : { byDate: {} };
+    renderUsageEvents(usageByDate ?? {});
   }
 
   linkClicksSort?.addEventListener('change', () => {
